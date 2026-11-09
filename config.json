@@ -1,0 +1,16 @@
+{
+  "leader_port": "/dev/tty.usbmodem5B421343381",
+  "follower_port": "/dev/tty.usbmodem5B421342761",
+  "leader_id": null,
+  "follower_id": null,
+  "leader_calibration_file": "/Users/azhuan/.cache/huggingface/lerobot/calibration/teleoperators/so_leader/my_awesome_leader_arm.json",
+  "follower_calibration_file": "/Users/azhuan/.cache/huggingface/lerobot/calibration/robots/so_follower/my_awesome_follower_arm.json",
+  "fps": 30,
+  "episode_time_s": 40,
+  "reset_time_s": 20,
+  "display_data": true,
+  "task": "Pick up the cube and place it into the tray.",
+  "cameras": {
+    "wrist": {"type": "opencv", "index_or_path": 0, "width": 640, "height": 480, "fps": 30}
+  }
+}
