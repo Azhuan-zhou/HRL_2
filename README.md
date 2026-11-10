@@ -103,14 +103,14 @@ python collect.py inspect --name cube_test
 
 1. 等待时可遥操作复位，不记录数据；按 **Enter** 开始一条。
 2. 再按 **Enter** 结束本条，没有时长上限（超过 50 秒也仍需 Enter）。
-3. 输入 **s + Enter** 标记成功，或 **f + Enter** 标记失败。两类数据都保存。选择结果及保存期间暂停遥操作跟随。
+3. 输入 **s + Enter** 标记成功并保存，或 **f + Enter** 标记失败并丢弃。失败片段通过 LeRobot 的清理接口丢弃，不写入数据集或结果标签，不占用 episode 编号，也不计入目标条数。选择结果及保存期间暂停遥操作跟随。
 4. 保存完成后回到等待，按 Enter 开始下一条；等待期间 **q + Enter** 退出。
 
-`--episodes 50` 是本次目标提示，不是上限；达到 50 条后仍可继续 Enter 录制。录制期间也可输入 q + Enter，选择当前条的成功/失败后保存并退出。正常退出请使用 q，等待编码及保存完成。Ctrl+C / 进程中断不能保证当前未完成片段保存。
+`--episodes 50` 是本次目标提示，不是上限；达到 50 条后仍可继续 Enter 录制。录制期间也可输入 q + Enter，选择当前条的成功/失败后，成功则保存、失败则丢弃，然后退出。正常退出请使用 q，等待编码及保存完成。Ctrl+C / 进程中断不能保证当前未完成片段保存。
 
 手动模式忽略 `episode_time_s` 和 `reset_time_s` 的计时。恢复原始自动计时模式可加 `--timed`，此时条数是硬上限，方向键及 Esc 使用 LeRobot 原生行为。
 
-每条结果额外写入 `data/<name>/meta/manual_outcomes.jsonl`，以 `episode_index` 对应 LeRobot 数据。每次保存先写 `status: "pending"`，保存成功再写 `status: "saved"`；读取时只选择 saved 行。`success` 为布尔值，`outcome` 为 success/failure。仅有 pending 表示保存过程被中断，需核对数据后再使用。标签是额外元数据，不会自动成为 LeRobot 训练特征；训练成功示范时需要据此筛选，失败数据不会自动被排除。旧数据不补标。
+每条结果额外写入 `data/<name>/meta/manual_outcomes.jsonl`，以 `episode_index` 对应 LeRobot 数据。每次保存先写 `status: "pending"`，保存成功再写 `status: "saved"`；读取时只选择 saved 行。`success` 为布尔值，新录制的 `outcome` 为 success。仅有 pending 表示保存过程被中断，需核对数据后再使用。标签是额外元数据，不会自动成为 LeRobot 训练特征；现在只保存成功片段。已有数据和标签不修改；旧版本已保存的 failure 仍然存在，训练旧数据时需要据此筛选。
 
 手动适配器已核对本机 LeRobot 源码的录制循环及 has_pending_frames 接口，启动前检查基础函数签名；自动测试不代替实机验证。先做少量试录。
 
