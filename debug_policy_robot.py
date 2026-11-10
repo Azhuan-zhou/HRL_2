@@ -26,13 +26,14 @@ def main():
     p.add_argument('--output',type=Path,required=True)
     p.add_argument('--execution-horizon',type=int,default=8)
     p.add_argument('--continuous',action='store_true',help='Run continuously until max-seconds or operator stop')
+    p.add_argument('--release-on-exit',action='store_true',help='Disable all motor torque on exit; support the arm before stopping')
     p.add_argument('--max-relative-target',type=float,default=3.,help='Maximum body target lead over measured position in degrees')
     p.add_argument('--segment-seconds',type=float,default=5)
     p.add_argument('--max-seconds',type=float,default=40)
     p.add_argument('--body-speed',type=float,default=15,help='Maximum commanded degrees per second')
     p.add_argument('--gripper-speed',type=float,default=40,help='Maximum commanded percentage points per second')
     a=p.parse_args()
-    if not (0<a.segment_seconds<=10 and 0<a.max_seconds<=60 and 0<a.body_speed<=20 and 0<a.gripper_speed<=60 and 0<a.max_relative_target<=10):
+    if not (0<a.segment_seconds<=10 and 0<a.max_seconds<=180 and 0<a.body_speed<=20 and 0<a.gripper_speed<=60 and 0<a.max_relative_target<=10):
         raise ValueError('Invalid rollout limits')
     a.output.mkdir(parents=True,exist_ok=False)
     settings={k:str(v) if isinstance(v,Path) else v for k,v in vars(a).items()}
@@ -42,7 +43,7 @@ def main():
     seed_all(42)
     names=[n.removesuffix('.pos') for n in JOINTS]
     bus=SerialMotorsBus(port=a.port,motors={n:Motor(i+1,'sts3215',MotorNormMode.DEGREES if i<5 else MotorNormMode.RANGE_0_100) for i,n in enumerate(names)})
-    camera=None;video=None;armed=False;stop=False;frames=0;active=0.;segment=0;records=[]
+    camera=None;video=None;armed=False;stop=False;frames=0;active=0.;segment=0;records=[];next_snapshot=0.
     result={'success':None,'reason':'setup_error','formal_evaluation':False}
     window='Diffusion robot test - Q to STOP'
     def request_stop(*_):
@@ -114,6 +115,14 @@ def main():
                     record={'segment':segment,'active_s':active+now-start,'state':state,'predicted':dict(zip(names,prediction.tolist())),'sent':goals,'cycle_s':time.monotonic()-tick}
                     log.write(json.dumps(record)+'\n');log.flush();records.append(record)
                     video.write(image);frames+=1
+                    if record['active_s'] >= next_snapshot:
+                        latest = a.output/'latest_frame.tmp.jpg'
+                        if not cv2.imwrite(str(latest),image):
+                            raise RuntimeError('Cannot save supervision frame')
+                        latest.replace(a.output/'latest_frame.jpg')
+                        status = {'active_s':record['active_s'],'frames':frames,'state':state,'waiting':False}
+                        (a.output/'status.json').write_text(json.dumps(status,indent=2)+'\n')
+                        next_snapshot=record['active_s']+1
                     cv2.putText(image,f'Test {active+now-start:.1f}s | Q: STOP',(12,25),cv2.FONT_HERSHEY_SIMPLEX,.6,(0,255,0),2)
                     cv2.imshow(window,image)
                     if cv2.waitKey(1)&0xff in (ord('q'),27):stop=True
@@ -124,7 +133,7 @@ def main():
                 status={'segment':segment,'active_s':active,'frames':frames,'state':bus.sync_read('Present_Position'),'waiting':not stop and not a.continuous and active<a.max_seconds}
                 (a.output/'status.json').write_text(json.dumps(status,indent=2)+'\n')
                 print('FINISHED' if a.continuous or stop else 'PAUSED',json.dumps(status),flush=True)
-                if stop or active>=a.max_seconds:break
+                if a.continuous or stop or active>=a.max_seconds:break
                 resume=a.output/f'CONTINUE_{segment:02d}'
                 wait_started=time.monotonic()
                 while not stop and not resume.exists():
@@ -138,7 +147,16 @@ def main():
         result.update(reason='runtime_error',error=repr(exc));raise
     finally:
         try:
-            if armed and bus.is_connected:hold();result['end_state']='Holding measured position; torque remains enabled'
+            if armed and bus.is_connected:
+                if a.release_on_exit:
+                    bus.disable_torque(num_retry=3)
+                    enabled = bus.sync_read('Torque_Enable', normalize=False, num_retry=3)
+                    if any(enabled.values()):
+                        raise RuntimeError(f'Torque release could not be confirmed: {enabled}')
+                    result['end_state']='All motor torque disabled; arm and gripper released'
+                else:
+                    hold()
+                    result['end_state']='Holding measured position; torque remains enabled'
         finally:
             bus.disconnect(disable_torque=False)
             if camera is not None:camera.release()
