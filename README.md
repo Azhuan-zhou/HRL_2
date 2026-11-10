@@ -193,14 +193,52 @@ python train_trim.py --drop_first=5 --drop_last=5 --config_path=configs/v1.json 
 
 ## 真机推理
 
-`configs/v1_eval.json` 的串口、标定、相机抄自 `config.json`，相机必须和训练数据一致，改了 `config.json` 要同步。没有 dry-run，第一次运行时手放在急停或电源上。
+### 1. 下载训练好的模型（在 Mac 上）
+
+两个模型打包在 Dell 的 `~/models.tar`（394 MB）。每次复制一行，不要手打：
 
 ```bash
-lerobot-record --config_path=configs/v1_eval.json \
-  --policy.path=runs/v1_act/checkpoints/last/pretrained_model
+mkdir -p ~/HRL_models && cd ~/HRL_models
+```
+```bash
+scp jiafeng@100.114.103.9:models.tar .
+```
+```bash
+tar xf models.tar && ls
 ```
 
-用了丢帧的话，把路径换成 `runs/v1_trim/...`。推理也会写数据集，再跑一次要换名字：加 `--dataset.repo_id=local/eval_2 --dataset.root=data/eval_2`。
+最后应该显示 `models.tar  v1_act  v2_trim20`，两个目录里各有一个 `model.safetensors`（197 MB）。
+
+| 模型 | 训练 |
+| --- | --- |
+| `v1_act` | `cube_placement_v2_clean`（34 段），不丢帧，10 万步 |
+| `v2_trim20` | 同样的数据，每段首尾各丢 20 帧，10 万步 |
+
+### 2. 运行前检查
+
+- `configs/v1_eval.json` 的串口和标定目录是从 `config.json` 抄来的（Azhuan 的 Mac）。机械臂插在别的电脑上时，先用 `lerobot-find-port` 查串口，再改 `port` 和 `calibration_dir`。
+- 相机 `wrist: 0` 必须是腕部相机，并且和采集数据时用的是同一个，可以用 `python collect.py preview` 确认。
+- 没有 dry-run。第一次运行时手放在电源上，动作不对就立刻断电。
+
+### 3. 运行
+
+在 `HRL_2/` 目录下运行：
+
+```bash
+M=$HOME/HRL_models
+```
+
+v1：
+```bash
+lerobot-record --config_path=configs/v1_eval.json --policy.path=$M/v1_act --dataset.repo_id=local/eval_v1 --dataset.root=data/eval_v1
+```
+
+v2：
+```bash
+lerobot-record --config_path=configs/v1_eval.json --policy.path=$M/v2_trim20 --dataset.repo_id=local/eval_v2 --dataset.root=data/eval_v2
+```
+
+每次运行，机械臂会自己动 30 秒，同时录一段评估数据。按 **→** 提前结束这一段，按 **Esc** 退出。再跑一次要换名字（比如 `eval_v1b`），否则会因为目录已存在而报错。
 
 ## 官方参考
 
