@@ -167,9 +167,9 @@ HRL_2/
 
 ## 训练 ACT
 
-在 `HRL_2/` 目录下运行，环境里要有 LeRobot 和 GPU（实验室 Linux 机器：`source ~/Newton_shear_force/.venv-lerobot/bin/activate`）。在别的机器上训练时，把整个 `data/` 拷过去。`configs/v1.json` 默认用 `data/cube_placement`。
+在 `HRL_2/` 目录下运行，环境里要有 LeRobot 和 GPU（实验室 Linux 机器：`source ~/Newton_shear_force/.venv-lerobot/bin/activate`）。在别的机器上训练时，把整个 `data/` 拷过去。`configs/v1.json`、`configs/v2.json` 用的是 `data/cube_placement_v2_clean`（已删失败片段的数据），换数据时改 `dataset.repo_id` 和 `dataset.root`。
 
-失败的片段也被录下来了，训练前先选出成功的：
+旧版本采集的数据（比如 `cube_placement_v2`）里还有失败片段，训练前先选出成功的；新采集的数据只保存成功片段，可以跳过这一步：
 
 ```bash
 EPS=$(python -c "import json;print(sorted({r['episode_index'] for r in map(json.loads,open('data/cube_placement/meta/manual_outcomes.jsonl')) if r['status']=='saved' and r['success']}))" | tr -d ' ')
