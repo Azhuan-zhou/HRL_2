@@ -1,0 +1,401 @@
+{
+  "source_root": "/Users/tianai/Desktop/cube_placement_v2",
+  "source_sha256": {
+    "data/chunk-000/file-000.parquet": "008c834adb0eb4dbbb9ba0742991127f7a4dd9a8aa78e351fa1fa2d52196543c",
+    "meta/episodes/chunk-000/file-000.parquet": "333ad2e8175471b1a344bde6aca92764b1fa5f6257ac0b1a52ad1c0b70d4228a",
+    "meta/info.json": "efcf94ce5be85ffd6cdd4b557b1a035ddba6530e27034e11414a4909bfe6a54c",
+    "meta/manual_outcomes.jsonl": "933db6873b57f9a68655b9af6760a7c79ae5c3708eaea78e0058f81b60546fe9",
+    "meta/stats.json": "474a3cefe795d6e61f4a9a654ddd2c5b7e2bd54b5a499ca718219f99945042a8",
+    "meta/tasks.parquet": "d1146631f4632b825247f2b4f400240dbf9a6fca7525a6400a5da25944b75c9a",
+    "videos/observation.images.wrist/chunk-000/file-000.mp4": "ab3b84da7985cc5de08adc59b9ba028dad354449878f13785ab09b2d04daae1f"
+  },
+  "success_only": true,
+  "trim_first_frames": 15,
+  "trim_last_frames": 15,
+  "excluded_failed_episodes": [
+    1,
+    2,
+    28,
+    30
+  ],
+  "total_episodes": 34,
+  "total_frames": 31692,
+  "episode_mapping": [
+    {
+      "source_episode_index": 0,
+      "episode_index": 0,
+      "source_length": 1292,
+      "kept_source_frames": [
+        15,
+        1277
+      ],
+      "length": 1262,
+      "success": true
+    },
+    {
+      "source_episode_index": 3,
+      "episode_index": 1,
+      "source_length": 1516,
+      "kept_source_frames": [
+        15,
+        1501
+      ],
+      "length": 1486,
+      "success": true
+    },
+    {
+      "source_episode_index": 4,
+      "episode_index": 2,
+      "source_length": 914,
+      "kept_source_frames": [
+        15,
+        899
+      ],
+      "length": 884,
+      "success": true
+    },
+    {
+      "source_episode_index": 5,
+      "episode_index": 3,
+      "source_length": 1343,
+      "kept_source_frames": [
+        15,
+        1328
+      ],
+      "length": 1313,
+      "success": true
+    },
+    {
+      "source_episode_index": 6,
+      "episode_index": 4,
+      "source_length": 1575,
+      "kept_source_frames": [
+        15,
+        1560
+      ],
+      "length": 1545,
+      "success": true
+    },
+    {
+      "source_episode_index": 7,
+      "episode_index": 5,
+      "source_length": 1259,
+      "kept_source_frames": [
+        15,
+        1244
+      ],
+      "length": 1229,
+      "success": true
+    },
+    {
+      "source_episode_index": 8,
+      "episode_index": 6,
+      "source_length": 894,
+      "kept_source_frames": [
+        15,
+        879
+      ],
+      "length": 864,
+      "success": true
+    },
+    {
+      "source_episode_index": 9,
+      "episode_index": 7,
+      "source_length": 1159,
+      "kept_source_frames": [
+        15,
+        1144
+      ],
+      "length": 1129,
+      "success": true
+    },
+    {
+      "source_episode_index": 10,
+      "episode_index": 8,
+      "source_length": 1090,
+      "kept_source_frames": [
+        15,
+        1075
+      ],
+      "length": 1060,
+      "success": true
+    },
+    {
+      "source_episode_index": 11,
+      "episode_index": 9,
+      "source_length": 835,
+      "kept_source_frames": [
+        15,
+        820
+      ],
+      "length": 805,
+      "success": true
+    },
+    {
+      "source_episode_index": 12,
+      "episode_index": 10,
+      "source_length": 956,
+      "kept_source_frames": [
+        15,
+        941
+      ],
+      "length": 926,
+      "success": true
+    },
+    {
+      "source_episode_index": 13,
+      "episode_index": 11,
+      "source_length": 1150,
+      "kept_source_frames": [
+        15,
+        1135
+      ],
+      "length": 1120,
+      "success": true
+    },
+    {
+      "source_episode_index": 14,
+      "episode_index": 12,
+      "source_length": 958,
+      "kept_source_frames": [
+        15,
+        943
+      ],
+      "length": 928,
+      "success": true
+    },
+    {
+      "source_episode_index": 15,
+      "episode_index": 13,
+      "source_length": 817,
+      "kept_source_frames": [
+        15,
+        802
+      ],
+      "length": 787,
+      "success": true
+    },
+    {
+      "source_episode_index": 16,
+      "episode_index": 14,
+      "source_length": 950,
+      "kept_source_frames": [
+        15,
+        935
+      ],
+      "length": 920,
+      "success": true
+    },
+    {
+      "source_episode_index": 17,
+      "episode_index": 15,
+      "source_length": 861,
+      "kept_source_frames": [
+        15,
+        846
+      ],
+      "length": 831,
+      "success": true
+    },
+    {
+      "source_episode_index": 18,
+      "episode_index": 16,
+      "source_length": 951,
+      "kept_source_frames": [
+        15,
+        936
+      ],
+      "length": 921,
+      "success": true
+    },
+    {
+      "source_episode_index": 19,
+      "episode_index": 17,
+      "source_length": 895,
+      "kept_source_frames": [
+        15,
+        880
+      ],
+      "length": 865,
+      "success": true
+    },
+    {
+      "source_episode_index": 20,
+      "episode_index": 18,
+      "source_length": 1104,
+      "kept_source_frames": [
+        15,
+        1089
+      ],
+      "length": 1074,
+      "success": true
+    },
+    {
+      "source_episode_index": 21,
+      "episode_index": 19,
+      "source_length": 979,
+      "kept_source_frames": [
+        15,
+        964
+      ],
+      "length": 949,
+      "success": true
+    },
+    {
+      "source_episode_index": 22,
+      "episode_index": 20,
+      "source_length": 820,
+      "kept_source_frames": [
+        15,
+        805
+      ],
+      "length": 790,
+      "success": true
+    },
+    {
+      "source_episode_index": 23,
+      "episode_index": 21,
+      "source_length": 836,
+      "kept_source_frames": [
+        15,
+        821
+      ],
+      "length": 806,
+      "success": true
+    },
+    {
+      "source_episode_index": 24,
+      "episode_index": 22,
+      "source_length": 769,
+      "kept_source_frames": [
+        15,
+        754
+      ],
+      "length": 739,
+      "success": true
+    },
+    {
+      "source_episode_index": 25,
+      "episode_index": 23,
+      "source_length": 812,
+      "kept_source_frames": [
+        15,
+        797
+      ],
+      "length": 782,
+      "success": true
+    },
+    {
+      "source_episode_index": 26,
+      "episode_index": 24,
+      "source_length": 854,
+      "kept_source_frames": [
+        15,
+        839
+      ],
+      "length": 824,
+      "success": true
+    },
+    {
+      "source_episode_index": 27,
+      "episode_index": 25,
+      "source_length": 939,
+      "kept_source_frames": [
+        15,
+        924
+      ],
+      "length": 909,
+      "success": true
+    },
+    {
+      "source_episode_index": 29,
+      "episode_index": 26,
+      "source_length": 738,
+      "kept_source_frames": [
+        15,
+        723
+      ],
+      "length": 708,
+      "success": true
+    },
+    {
+      "source_episode_index": 31,
+      "episode_index": 27,
+      "source_length": 685,
+      "kept_source_frames": [
+        15,
+        670
+      ],
+      "length": 655,
+      "success": true
+    },
+    {
+      "source_episode_index": 32,
+      "episode_index": 28,
+      "source_length": 750,
+      "kept_source_frames": [
+        15,
+        735
+      ],
+      "length": 720,
+      "success": true
+    },
+    {
+      "source_episode_index": 33,
+      "episode_index": 29,
+      "source_length": 737,
+      "kept_source_frames": [
+        15,
+        722
+      ],
+      "length": 707,
+      "success": true
+    },
+    {
+      "source_episode_index": 34,
+      "episode_index": 30,
+      "source_length": 831,
+      "kept_source_frames": [
+        15,
+        816
+      ],
+      "length": 801,
+      "success": true
+    },
+    {
+      "source_episode_index": 35,
+      "episode_index": 31,
+      "source_length": 702,
+      "kept_source_frames": [
+        15,
+        687
+      ],
+      "length": 672,
+      "success": true
+    },
+    {
+      "source_episode_index": 36,
+      "episode_index": 32,
+      "source_length": 717,
+      "kept_source_frames": [
+        15,
+        702
+      ],
+      "length": 687,
+      "success": true
+    },
+    {
+      "source_episode_index": 37,
+      "episode_index": 33,
+      "source_length": 1024,
+      "kept_source_frames": [
+        15,
+        1009
+      ],
+      "length": 994,
+      "success": true
+    }
+  ],
+  "video_encoding": "H.264 CRF 18; only kept frames; image stats sampled from kept frames",
+  "video_gop_size": 2
+}

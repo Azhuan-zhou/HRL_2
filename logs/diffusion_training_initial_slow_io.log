@@ -1,0 +1,67 @@
+{
+  "total_episodes": 34,
+  "total_frames": 31692,
+  "fps": 30,
+  "train_episodes": [
+    0,
+    1,
+    2,
+    3,
+    4,
+    6,
+    7,
+    8,
+    9,
+    10,
+    11,
+    12,
+    13,
+    14,
+    15,
+    16,
+    17,
+    18,
+    21,
+    22,
+    23,
+    24,
+    25,
+    26,
+    27,
+    28,
+    29,
+    30,
+    31,
+    32,
+    33
+  ],
+  "val_episodes": [
+    5,
+    19,
+    20
+  ],
+  "excluded_episodes": []
+}
+W1109 18:18:36.343000 97858 torch/distributed/elastic/multiprocessing/redirects.py:29] NOTE: Redirects are currently not supported in Windows or MacOs.
+objc[97858]: Class AVFFrameReceiver is implemented in both /Users/tianai/Desktop/2026-11-09/desktop-cube-placement-v2-github-https/work/venv/lib/python3.12/site-packages/av/.dylibs/libavdevice.61.3.100.dylib (0x140ce43a8) and /Users/tianai/Desktop/2026-11-09/desktop-cube-placement-v2-github-https/work/venv/lib/python3.12/site-packages/cv2/.dylibs/libavdevice.61.3.100.dylib (0x302d983a8). This may cause spurious casting failures and mysterious crashes. One of the duplicates must be removed or renamed.
+objc[97858]: Class AVFAudioReceiver is implemented in both /Users/tianai/Desktop/2026-11-09/desktop-cube-placement-v2-github-https/work/venv/lib/python3.12/site-packages/av/.dylibs/libavdevice.61.3.100.dylib (0x140ce43f8) and /Users/tianai/Desktop/2026-11-09/desktop-cube-placement-v2-github-https/work/venv/lib/python3.12/site-packages/cv2/.dylibs/libavdevice.61.3.100.dylib (0x302d983f8). This may cause spurious casting failures and mysterious crashes. One of the duplicates must be removed or renamed.
+{"step": 1, "train_loss": 1.10688054561615, "lr": 4.0000000000000003e-07, "elapsed_s": 8.118847250007093}
+Traceback (most recent call last):
+  File "/Users/tianai/Desktop/2026-11-09/desktop-cube-placement-v2-github-https/outputs/HRL_2/train_diffusion.py", line 287, in <module>
+    main()
+  File "/Users/tianai/Desktop/2026-11-09/desktop-cube-placement-v2-github-https/outputs/HRL_2/train_diffusion.py", line 232, in main
+    loss, _ = policy(pre(batch))
+                     ^^^^^^^^^^
+  File "/Users/tianai/Desktop/2026-11-09/desktop-cube-placement-v2-github-https/work/venv/lib/python3.12/site-packages/lerobot/processor/pipeline.py", line 319, in __call__
+    transformed_transition = self._forward(transition)
+                             ^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/Users/tianai/Desktop/2026-11-09/desktop-cube-placement-v2-github-https/work/venv/lib/python3.12/site-packages/lerobot/processor/pipeline.py", line 336, in _forward
+    transition = processor_step(transition)
+                 ^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/Users/tianai/Desktop/2026-11-09/desktop-cube-placement-v2-github-https/work/venv/lib/python3.12/site-packages/lerobot/processor/batch_processor.py", line 250, in __call__
+    transition = self.to_batch_complementary_data_processor(transition)
+                 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/Users/tianai/Desktop/2026-11-09/desktop-cube-placement-v2-github-https/work/venv/lib/python3.12/site-packages/lerobot/processor/pipeline.py", line 2128, in __call__
+    complementary_data = new_transition.get(TransitionKey.COMPLEMENTARY_DATA)
+                         ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+KeyboardInterrupt

@@ -165,8 +165,20 @@ HRL_2/
 - 追加配置不一致：恢复首次采集配置，或使用新名字建立新数据集；不要直接混合不同相机布局。
 - 没有实机测试声明：此包在独立环境检查 Python 语法和命令构造/保护逻辑；未连接你的 Mac、相机或机械臂。必须完成以上试录验证。
 
+## Diffusion Policy 训练和部署
+
+新增的 diffusion policy、成功演示筛选、每条 episode 前后各 15 帧裁剪、训练和评测用法见 [DIFFUSION.md](DIFFUSION.md)。默认读取桌面的 `cube_placement_v2`，处理后写入本仓库的 `data/cube_placement_v2_diffusion`，原始数据不改动。
+
 ## 官方参考
 
 - https://huggingface.co/docs/lerobot/so101
 - https://huggingface.co/docs/lerobot/il_robots
 - https://huggingface.co/docs/lerobot/installation
+
+## Diffusion training result
+
+![Diffusion training curve](results/diffusion_cube/training_curve.png)
+
+Training stopped at 2,000 steps. Validation loss: 0.06705 at step 1,000 and 0.04364 at step 2,000. Robot rollout success has not yet been evaluated.
+
+Model weights and optimizer states use Git LFS (`git lfs install`, then `git lfs pull`). Videos are intentionally excluded; the committed data tables and metadata alone are not a complete training dataset. Restore the local videos or regenerate the processed dataset from the original recordings before training.

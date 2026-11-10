@@ -1,0 +1,666 @@
+{
+  "settings": {
+    "seed": 42,
+    "success_only": true,
+    "trim_first_frames": 15,
+    "trim_last_frames": 15,
+    "val_fraction": 0.1,
+    "n_obs_steps": 2,
+    "horizon": 16,
+    "n_action_steps": 8,
+    "resize_shape": [
+      240,
+      320
+    ],
+    "down_dims": [
+      128,
+      256,
+      512
+    ],
+    "noise_scheduler_type": "DDIM",
+    "num_train_timesteps": 100,
+    "num_inference_steps": 10,
+    "steps": 30000,
+    "batch_size": 8,
+    "num_workers": 0,
+    "lr": 0.0001,
+    "warmup_steps": 500,
+    "grad_clip_norm": 10.0,
+    "save_freq": 5000,
+    "eval_freq": 1000,
+    "val_batches": 8,
+    "color_jitter": true,
+    "use_degrees": true,
+    "max_relative_target": 10.0
+  },
+  "dataset": {
+    "root": "/Users/tianai/Desktop/2026-11-09/desktop-cube-placement-v2-github-https/outputs/HRL_2/data/cube_placement_v2_diffusion",
+    "fps": 30,
+    "total_episodes": 34,
+    "total_frames": 31692,
+    "success_only": true,
+    "train_episodes": [
+      0,
+      1,
+      2,
+      3,
+      4,
+      6,
+      7,
+      8,
+      9,
+      10,
+      11,
+      12,
+      13,
+      14,
+      15,
+      16,
+      17,
+      18,
+      21,
+      22,
+      23,
+      24,
+      25,
+      26,
+      27,
+      28,
+      29,
+      30,
+      31,
+      32,
+      33
+    ],
+    "val_episodes": [
+      5,
+      19,
+      20
+    ],
+    "excluded_episodes": [],
+    "labels": {
+      "0": true,
+      "1": true,
+      "2": true,
+      "3": true,
+      "4": true,
+      "5": true,
+      "6": true,
+      "7": true,
+      "8": true,
+      "9": true,
+      "10": true,
+      "11": true,
+      "12": true,
+      "13": true,
+      "14": true,
+      "15": true,
+      "16": true,
+      "17": true,
+      "18": true,
+      "19": true,
+      "20": true,
+      "21": true,
+      "22": true,
+      "23": true,
+      "24": true,
+      "25": true,
+      "26": true,
+      "27": true,
+      "28": true,
+      "29": true,
+      "30": true,
+      "31": true,
+      "32": true,
+      "33": true
+    },
+    "sha256": {
+      "data/chunk-000/file-000.parquet": "6fd1f5d39e96eebefef9f8a962555e2254977846f6efe702297bd67629dcca7b",
+      "meta/episodes/chunk-000/file-000.parquet": "8619048576d6e7e55bb399b6060a2ce2a382f0f05eb382550e0adf7dab520313",
+      "meta/info.json": "429da9200295e2162eff74efd90784574ce6a13048438d8eadea1f6088213fd8",
+      "meta/manual_outcomes.jsonl": "fb0c58d3bb41100cf5bdb9ce284b37dc6e85f2e8a5df084cd59b3805337b7066",
+      "meta/preparation.json": "4f43c034d76f85ce0f4e73b7394fde56962ce74cab22c8cc8c5546d916c5eb05",
+      "meta/stats.json": "a2af032b1ceec73e086a9eb4e2990754f3f0d58dbca045ee7efde871ac52a8e1",
+      "meta/tasks.parquet": "d1146631f4632b825247f2b4f400240dbf9a6fca7525a6400a5da25944b75c9a",
+      "videos/observation.images.wrist/chunk-000/file-000.mp4": "3dd9b858d7f15fe3789fe02b1c792c3a3e9b9da38b5b0214493ec83e64c4b765",
+      "videos/observation.images.wrist/chunk-000/file-001.mp4": "235493a5fbd610f03b3f0728b9463f55134a46ccabefd6338d6032f84c13af63",
+      "videos/observation.images.wrist/chunk-000/file-002.mp4": "6e7e20820055dc26900fb9d126df0ee228f594193225865df024e88f31cdfde5",
+      "videos/observation.images.wrist/chunk-000/file-003.mp4": "6efe4b71ea57242cbcf3ae76a9214c01b20343cd457e2f3b38bdb6cf02e04169",
+      "videos/observation.images.wrist/chunk-000/file-004.mp4": "53b8c2a109f83d765a3d35f6907430fd8370bbf56294561fd01f8172ece7f11a",
+      "videos/observation.images.wrist/chunk-000/file-005.mp4": "c945ff2cf825f8b70308a35990ffdf43f4c04d80a92d44f62172b90b4e5e8728",
+      "videos/observation.images.wrist/chunk-000/file-006.mp4": "260a63905df0ae6d793821f39a18c23891ee6bd8012a7af7bbbe73ad1364a83a",
+      "videos/observation.images.wrist/chunk-000/file-007.mp4": "4834b47b72ca97833d21ce653b3852277aee0531683b6f8ba89c41e87d45f612",
+      "videos/observation.images.wrist/chunk-000/file-008.mp4": "72cbf62d6e67cb5a959fc33b59b52aac2ab5b104c34f0613b89297f2a1aa208f",
+      "videos/observation.images.wrist/chunk-000/file-009.mp4": "013a8d86ae016f23f20d656019540c6e93be7a053b7a0df5c5b3e3cbecf04839",
+      "videos/observation.images.wrist/chunk-000/file-010.mp4": "9a0a42f053c4dda892107e90ba0a8a01202e6adacee85ff758d579052ff0e387",
+      "videos/observation.images.wrist/chunk-000/file-011.mp4": "7569bf96f089e2107db99a3ecd69dc6ba027d8cd18dfd76e99360b65f1255175",
+      "videos/observation.images.wrist/chunk-000/file-012.mp4": "6f39279a1ed3ac06dac50311049bcccb58fa51954ce84f2836dc6f22dcbac60f",
+      "videos/observation.images.wrist/chunk-000/file-013.mp4": "424d7f037dfbf9130b4be20cce4ee44984792cf258279a233e5f5aaa829a4e31",
+      "videos/observation.images.wrist/chunk-000/file-014.mp4": "1465f1ce99f7c2204e6cf0bb14b6500405f4ddc1c9df7b2070d7ebab177ada6d",
+      "videos/observation.images.wrist/chunk-000/file-015.mp4": "1d41700a3329523a36b6bcf5e8d783da25c677f7cc394b7c48c1b138fa03bfa5",
+      "videos/observation.images.wrist/chunk-000/file-016.mp4": "e312694de7966fa6ea0d1cc1e230acd307b94db20027dfe49771350f1dd1297d",
+      "videos/observation.images.wrist/chunk-000/file-017.mp4": "c087436bf3803a8fe26ee17bbf634c75ad6edfb1a5a9aadca903e805a015c3e7",
+      "videos/observation.images.wrist/chunk-000/file-018.mp4": "ffffae90b1da373144347cf8c1fa3ca58cef525847f89cf8b04543e1a64d4c87",
+      "videos/observation.images.wrist/chunk-000/file-019.mp4": "d7178f8e169b612b1b29bb69a87cc26b1c7f3ab9c9acfad67facdac3a41256c0",
+      "videos/observation.images.wrist/chunk-000/file-020.mp4": "480c20e55139d5e6b7735c2a9c117c5bbb0076684fa98691981a804f9b81065b",
+      "videos/observation.images.wrist/chunk-000/file-021.mp4": "7e9d0c26e10b33b4616ceb4b7a2a0faca37fc836b482efd0bc579e68d8a87340",
+      "videos/observation.images.wrist/chunk-000/file-022.mp4": "ed558e7c9c8eec3794f24faf41d8d720384e0c4778af4e07e70f679ee392509b",
+      "videos/observation.images.wrist/chunk-000/file-023.mp4": "d210731a51e5b6a59657da200cf0379a876dd4bc397cb389e3fdf699ff6bd041",
+      "videos/observation.images.wrist/chunk-000/file-024.mp4": "b28551a31d3e8293c9a32fd09378142426ae2ca1f63b0a75828fae7ce805fcca",
+      "videos/observation.images.wrist/chunk-000/file-025.mp4": "9f0ee00de89f05e1efc01978b5d1c16604eb2379ad1e059cb01b6c5372e5bc13",
+      "videos/observation.images.wrist/chunk-000/file-026.mp4": "19655a19e85d176633cb5edbea73b6b5b798d9019a82f10f0decd0d1e0556650",
+      "videos/observation.images.wrist/chunk-000/file-027.mp4": "d221d05b859775c7fd652039ad812e7c8436aac1e0e2b24c719abe94bd8e7bc3",
+      "videos/observation.images.wrist/chunk-000/file-028.mp4": "e1c43f80dab6cedef27485ab59c7a3b53a179617b30fd8e48ca15632a3f3ea8a",
+      "videos/observation.images.wrist/chunk-000/file-029.mp4": "d640306144e7c7991e5ba02ba63123748660ffdaf7cb33513d16d11cc21261ed",
+      "videos/observation.images.wrist/chunk-000/file-030.mp4": "d22122b188f9b7a8be3594e1d80e5bda1fbc9f9deecc0313c98ff59f970909a9",
+      "videos/observation.images.wrist/chunk-000/file-031.mp4": "365311fd3d050fbdbf410c4d3831c216dddf0c794d8a38b76710c56830c24957",
+      "videos/observation.images.wrist/chunk-000/file-032.mp4": "4ae79777a9c65757a1c1b0f1a89e6928c3b8ce27338a571d5e540c32524720f5",
+      "videos/observation.images.wrist/chunk-000/file-033.mp4": "c2aaf3002e26a9a01199f4bb791f1891c757ce36fd022d29db64ec6a10f46b80"
+    },
+    "features": {
+      "action": {
+        "dtype": "float32",
+        "names": [
+          "shoulder_pan.pos",
+          "shoulder_lift.pos",
+          "elbow_flex.pos",
+          "wrist_flex.pos",
+          "wrist_roll.pos",
+          "gripper.pos"
+        ],
+        "shape": [
+          6
+        ]
+      },
+      "observation.state": {
+        "dtype": "float32",
+        "names": [
+          "shoulder_pan.pos",
+          "shoulder_lift.pos",
+          "elbow_flex.pos",
+          "wrist_flex.pos",
+          "wrist_roll.pos",
+          "gripper.pos"
+        ],
+        "shape": [
+          6
+        ]
+      },
+      "observation.images.wrist": {
+        "dtype": "video",
+        "shape": [
+          480,
+          640,
+          3
+        ],
+        "names": [
+          "height",
+          "width",
+          "channels"
+        ],
+        "info": {
+          "is_depth_map": false,
+          "video.height": 480,
+          "video.width": 640,
+          "video.codec": "h264",
+          "video.pix_fmt": "yuv420p",
+          "video.fps": 30,
+          "video.channels": 3,
+          "has_audio": false,
+          "video.g": 2,
+          "video.crf": 18,
+          "video.preset": "ultrafast",
+          "video.video_backend": "pyav"
+        }
+      },
+      "timestamp": {
+        "dtype": "float32",
+        "shape": [
+          1
+        ],
+        "names": null
+      },
+      "frame_index": {
+        "dtype": "int64",
+        "shape": [
+          1
+        ],
+        "names": null
+      },
+      "episode_index": {
+        "dtype": "int64",
+        "shape": [
+          1
+        ],
+        "names": null
+      },
+      "index": {
+        "dtype": "int64",
+        "shape": [
+          1
+        ],
+        "names": null
+      },
+      "task_index": {
+        "dtype": "int64",
+        "shape": [
+          1
+        ],
+        "names": null
+      }
+    },
+    "task": "Pick up the cube and place it into the tray.",
+    "preparation": {
+      "source_root": "/Users/tianai/Desktop/cube_placement_v2",
+      "source_sha256": {
+        "data/chunk-000/file-000.parquet": "008c834adb0eb4dbbb9ba0742991127f7a4dd9a8aa78e351fa1fa2d52196543c",
+        "meta/episodes/chunk-000/file-000.parquet": "333ad2e8175471b1a344bde6aca92764b1fa5f6257ac0b1a52ad1c0b70d4228a",
+        "meta/info.json": "efcf94ce5be85ffd6cdd4b557b1a035ddba6530e27034e11414a4909bfe6a54c",
+        "meta/manual_outcomes.jsonl": "933db6873b57f9a68655b9af6760a7c79ae5c3708eaea78e0058f81b60546fe9",
+        "meta/stats.json": "474a3cefe795d6e61f4a9a654ddd2c5b7e2bd54b5a499ca718219f99945042a8",
+        "meta/tasks.parquet": "d1146631f4632b825247f2b4f400240dbf9a6fca7525a6400a5da25944b75c9a",
+        "videos/observation.images.wrist/chunk-000/file-000.mp4": "ab3b84da7985cc5de08adc59b9ba028dad354449878f13785ab09b2d04daae1f"
+      },
+      "success_only": true,
+      "trim_first_frames": 15,
+      "trim_last_frames": 15,
+      "excluded_failed_episodes": [
+        1,
+        2,
+        28,
+        30
+      ],
+      "total_episodes": 34,
+      "total_frames": 31692,
+      "episode_mapping": [
+        {
+          "source_episode_index": 0,
+          "episode_index": 0,
+          "source_length": 1292,
+          "kept_source_frames": [
+            15,
+            1277
+          ],
+          "length": 1262,
+          "success": true
+        },
+        {
+          "source_episode_index": 3,
+          "episode_index": 1,
+          "source_length": 1516,
+          "kept_source_frames": [
+            15,
+            1501
+          ],
+          "length": 1486,
+          "success": true
+        },
+        {
+          "source_episode_index": 4,
+          "episode_index": 2,
+          "source_length": 914,
+          "kept_source_frames": [
+            15,
+            899
+          ],
+          "length": 884,
+          "success": true
+        },
+        {
+          "source_episode_index": 5,
+          "episode_index": 3,
+          "source_length": 1343,
+          "kept_source_frames": [
+            15,
+            1328
+          ],
+          "length": 1313,
+          "success": true
+        },
+        {
+          "source_episode_index": 6,
+          "episode_index": 4,
+          "source_length": 1575,
+          "kept_source_frames": [
+            15,
+            1560
+          ],
+          "length": 1545,
+          "success": true
+        },
+        {
+          "source_episode_index": 7,
+          "episode_index": 5,
+          "source_length": 1259,
+          "kept_source_frames": [
+            15,
+            1244
+          ],
+          "length": 1229,
+          "success": true
+        },
+        {
+          "source_episode_index": 8,
+          "episode_index": 6,
+          "source_length": 894,
+          "kept_source_frames": [
+            15,
+            879
+          ],
+          "length": 864,
+          "success": true
+        },
+        {
+          "source_episode_index": 9,
+          "episode_index": 7,
+          "source_length": 1159,
+          "kept_source_frames": [
+            15,
+            1144
+          ],
+          "length": 1129,
+          "success": true
+        },
+        {
+          "source_episode_index": 10,
+          "episode_index": 8,
+          "source_length": 1090,
+          "kept_source_frames": [
+            15,
+            1075
+          ],
+          "length": 1060,
+          "success": true
+        },
+        {
+          "source_episode_index": 11,
+          "episode_index": 9,
+          "source_length": 835,
+          "kept_source_frames": [
+            15,
+            820
+          ],
+          "length": 805,
+          "success": true
+        },
+        {
+          "source_episode_index": 12,
+          "episode_index": 10,
+          "source_length": 956,
+          "kept_source_frames": [
+            15,
+            941
+          ],
+          "length": 926,
+          "success": true
+        },
+        {
+          "source_episode_index": 13,
+          "episode_index": 11,
+          "source_length": 1150,
+          "kept_source_frames": [
+            15,
+            1135
+          ],
+          "length": 1120,
+          "success": true
+        },
+        {
+          "source_episode_index": 14,
+          "episode_index": 12,
+          "source_length": 958,
+          "kept_source_frames": [
+            15,
+            943
+          ],
+          "length": 928,
+          "success": true
+        },
+        {
+          "source_episode_index": 15,
+          "episode_index": 13,
+          "source_length": 817,
+          "kept_source_frames": [
+            15,
+            802
+          ],
+          "length": 787,
+          "success": true
+        },
+        {
+          "source_episode_index": 16,
+          "episode_index": 14,
+          "source_length": 950,
+          "kept_source_frames": [
+            15,
+            935
+          ],
+          "length": 920,
+          "success": true
+        },
+        {
+          "source_episode_index": 17,
+          "episode_index": 15,
+          "source_length": 861,
+          "kept_source_frames": [
+            15,
+            846
+          ],
+          "length": 831,
+          "success": true
+        },
+        {
+          "source_episode_index": 18,
+          "episode_index": 16,
+          "source_length": 951,
+          "kept_source_frames": [
+            15,
+            936
+          ],
+          "length": 921,
+          "success": true
+        },
+        {
+          "source_episode_index": 19,
+          "episode_index": 17,
+          "source_length": 895,
+          "kept_source_frames": [
+            15,
+            880
+          ],
+          "length": 865,
+          "success": true
+        },
+        {
+          "source_episode_index": 20,
+          "episode_index": 18,
+          "source_length": 1104,
+          "kept_source_frames": [
+            15,
+            1089
+          ],
+          "length": 1074,
+          "success": true
+        },
+        {
+          "source_episode_index": 21,
+          "episode_index": 19,
+          "source_length": 979,
+          "kept_source_frames": [
+            15,
+            964
+          ],
+          "length": 949,
+          "success": true
+        },
+        {
+          "source_episode_index": 22,
+          "episode_index": 20,
+          "source_length": 820,
+          "kept_source_frames": [
+            15,
+            805
+          ],
+          "length": 790,
+          "success": true
+        },
+        {
+          "source_episode_index": 23,
+          "episode_index": 21,
+          "source_length": 836,
+          "kept_source_frames": [
+            15,
+            821
+          ],
+          "length": 806,
+          "success": true
+        },
+        {
+          "source_episode_index": 24,
+          "episode_index": 22,
+          "source_length": 769,
+          "kept_source_frames": [
+            15,
+            754
+          ],
+          "length": 739,
+          "success": true
+        },
+        {
+          "source_episode_index": 25,
+          "episode_index": 23,
+          "source_length": 812,
+          "kept_source_frames": [
+            15,
+            797
+          ],
+          "length": 782,
+          "success": true
+        },
+        {
+          "source_episode_index": 26,
+          "episode_index": 24,
+          "source_length": 854,
+          "kept_source_frames": [
+            15,
+            839
+          ],
+          "length": 824,
+          "success": true
+        },
+        {
+          "source_episode_index": 27,
+          "episode_index": 25,
+          "source_length": 939,
+          "kept_source_frames": [
+            15,
+            924
+          ],
+          "length": 909,
+          "success": true
+        },
+        {
+          "source_episode_index": 29,
+          "episode_index": 26,
+          "source_length": 738,
+          "kept_source_frames": [
+            15,
+            723
+          ],
+          "length": 708,
+          "success": true
+        },
+        {
+          "source_episode_index": 31,
+          "episode_index": 27,
+          "source_length": 685,
+          "kept_source_frames": [
+            15,
+            670
+          ],
+          "length": 655,
+          "success": true
+        },
+        {
+          "source_episode_index": 32,
+          "episode_index": 28,
+          "source_length": 750,
+          "kept_source_frames": [
+            15,
+            735
+          ],
+          "length": 720,
+          "success": true
+        },
+        {
+          "source_episode_index": 33,
+          "episode_index": 29,
+          "source_length": 737,
+          "kept_source_frames": [
+            15,
+            722
+          ],
+          "length": 707,
+          "success": true
+        },
+        {
+          "source_episode_index": 34,
+          "episode_index": 30,
+          "source_length": 831,
+          "kept_source_frames": [
+            15,
+            816
+          ],
+          "length": 801,
+          "success": true
+        },
+        {
+          "source_episode_index": 35,
+          "episode_index": 31,
+          "source_length": 702,
+          "kept_source_frames": [
+            15,
+            687
+          ],
+          "length": 672,
+          "success": true
+        },
+        {
+          "source_episode_index": 36,
+          "episode_index": 32,
+          "source_length": 717,
+          "kept_source_frames": [
+            15,
+            702
+          ],
+          "length": 687,
+          "success": true
+        },
+        {
+          "source_episode_index": 37,
+          "episode_index": 33,
+          "source_length": 1024,
+          "kept_source_frames": [
+            15,
+            1009
+          ],
+          "length": 994,
+          "success": true
+        }
+      ],
+      "video_encoding": "H.264 CRF 18; only kept frames; image stats sampled from kept frames",
+      "video_gop_size": 2
+    }
+  },
+  "versions": {
+    "lerobot": "0.7.0",
+    "torch": "2.10.0",
+    "torchvision": "0.25.0",
+    "diffusers": "0.39.0",
+    "datasets": "5.2.0",
+    "av": "15.1.0"
+  },
+  "device": "mps",
+  "smoke_test": false,
+  "action_representation": "absolute joint targets; body=degrees, gripper=0..100"
+}

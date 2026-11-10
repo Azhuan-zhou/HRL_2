@@ -1,0 +1,3 @@
+-r requirements-diffusion.txt
+# Assignment's official STEP implementation, pinned to the inspected ranking API.
+sequentialized_barnard_tests @ git+https://github.com/TRI-ML/sequentialized_barnard_tests.git@3ae1623906f82fe472a352ed4a6b8e4a712f1f3d

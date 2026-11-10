@@ -1,0 +1,14 @@
+__pycache__/
+.pytest_cache/
+.ruff_cache/
+.venv*/
+.DS_Store
+eval/
+
+# Videos remain local; tables, metadata and checkpoints are versioned.
+*.mp4
+*.MP4
+*.avi
+*.mov
+*.mkv
+*.webm

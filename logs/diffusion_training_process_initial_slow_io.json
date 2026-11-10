@@ -1,0 +1,19 @@
+{
+  "pid": 97858,
+  "keep_awake_pid": 97859,
+  "command": [
+    "/Users/tianai/Desktop/2026-11-09/desktop-cube-placement-v2-github-https/work/venv/bin/python",
+    "-u",
+    "/Users/tianai/Desktop/2026-11-09/desktop-cube-placement-v2-github-https/outputs/HRL_2/train_diffusion.py",
+    "--data",
+    "/Users/tianai/Desktop/2026-11-09/desktop-cube-placement-v2-github-https/outputs/HRL_2/data/cube_placement_v2_diffusion",
+    "--device",
+    "mps",
+    "--batch-size",
+    "8",
+    "--output",
+    "/Users/tianai/Desktop/2026-11-09/desktop-cube-placement-v2-github-https/outputs/HRL_2/runs/diffusion_cube"
+  ],
+  "log": "/Users/tianai/Desktop/2026-11-09/desktop-cube-placement-v2-github-https/outputs/HRL_2/logs/diffusion_training.log",
+  "output": "/Users/tianai/Desktop/2026-11-09/desktop-cube-placement-v2-github-https/outputs/HRL_2/runs/diffusion_cube"
+}

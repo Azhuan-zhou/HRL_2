@@ -1,0 +1,6 @@
+# Python 3.12; keep collection's existing environment separate.
+lerobot[dataset,diffusion,feetech]==0.7.0
+torch==2.10.0
+torchvision==0.25.0
+torchcodec==0.10.0
+matplotlib>=3.9,<4
