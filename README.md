@@ -165,6 +165,43 @@ HRL_2/
 - 追加配置不一致：恢复首次采集配置，或使用新名字建立新数据集；不要直接混合不同相机布局。
 - 没有实机测试声明：此包在独立环境检查 Python 语法和命令构造/保护逻辑；未连接你的 Mac、相机或机械臂。必须完成以上试录验证。
 
+## 训练 ACT
+
+在 `HRL_2/` 目录下运行，环境里要有 LeRobot 和 GPU（实验室 Linux 机器：`source ~/Newton_shear_force/.venv-lerobot/bin/activate`）。在别的机器上训练时，把整个 `data/` 拷过去。`configs/v1.json` 默认用 `data/cube_placement`。
+
+失败的片段也被录下来了，训练前先选出成功的：
+
+```bash
+EPS=$(python -c "import json;print(sorted({r['episode_index'] for r in map(json.loads,open('data/cube_placement/meta/manual_outcomes.jsonl')) if r['status']=='saved' and r['success']}))" | tr -d ' ')
+echo "$EPS"
+```
+
+只用成功片段训练，不丢帧：
+
+```bash
+lerobot-train --config_path=configs/v1.json --dataset.episodes="$EPS"
+```
+
+同时丢掉每段开头和结尾的帧（30 fps 下 30 帧 = 1 秒，数字按数据调）：
+
+```bash
+python train_trim.py --drop_first=5 --drop_last=5 --config_path=configs/v1.json \
+  --dataset.episodes="$EPS" --output_dir=runs/v1_trim --job_name=v1_trim
+```
+
+丢掉的帧既不做训练起点，也不做 action 目标，数据集文件不会改动。`--output_dir` 必须还不存在，已存在时 LeRobot 会报错，不会覆盖。
+
+## 真机推理
+
+`configs/v1_eval.json` 的串口、标定、相机抄自 `config.json`，相机必须和训练数据一致，改了 `config.json` 要同步。没有 dry-run，第一次运行时手放在急停或电源上。
+
+```bash
+lerobot-record --config_path=configs/v1_eval.json \
+  --policy.path=runs/v1_act/checkpoints/last/pretrained_model
+```
+
+用了丢帧的话，把路径换成 `runs/v1_trim/...`。推理也会写数据集，再跑一次要换名字：加 `--dataset.repo_id=local/eval_2 --dataset.root=data/eval_2`。
+
 ## 官方参考
 
 - https://huggingface.co/docs/lerobot/so101

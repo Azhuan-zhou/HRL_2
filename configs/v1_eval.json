@@ -1,0 +1,20 @@
+{
+  "robot": {
+    "type": "so101_follower",
+    "port": "/dev/tty.usbmodem5B421342761",
+    "id": "my_awesome_follower_arm",
+    "calibration_dir": "/Users/azhuan/.cache/huggingface/lerobot/calibration/robots/so_follower",
+    "max_relative_target": 5.0,
+    "cameras": {
+      "wrist": {"type": "opencv", "index_or_path": 0, "width": 640, "height": 480, "fps": 30}
+    }
+  },
+  "dataset": {
+    "repo_id": "local/eval_cube_placement",
+    "root": "data/eval_cube_placement",
+    "single_task": "Pick up the cube and place it into the tray.",
+    "num_episodes": 1,
+    "episode_time_s": 30,
+    "push_to_hub": false
+  }
+}

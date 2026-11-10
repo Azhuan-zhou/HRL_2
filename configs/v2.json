@@ -1,0 +1,9 @@
+{
+  "dataset": {"repo_id": "local/cube_placement_v2_clean", "root": "data/cube_placement_v2_clean"},
+  "policy": {"type": "act", "push_to_hub": false, "n_action_steps": 30},
+  "output_dir": "runs/v2_trim20",
+  "job_name": "v2_trim20",
+  "batch_size": 8,
+  "num_workers": 4,
+  "steps": 100000
+}
