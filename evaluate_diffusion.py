@@ -16,13 +16,13 @@ from run_diffusion import checkpoint_hash
 
 
 def make_plan(checkpoint, output, budget, seed, timeout):
-    require(budget >= 25, "作业要求每种配置至少 25 次评测")
-    require(timeout > 0, "timeout 必须为正数")
+    require(budget >= 25, "The assignment requires at least 25 trials per configuration")
+    require(timeout > 0, "timeout must be positive")
     checkpoint = checkpoint.expanduser().resolve()
     metadata = read_json(checkpoint / "training_metadata.json")
     cfg = read_json(checkpoint / "config.json")
-    require(cfg["horizon"] - cfg["n_obs_steps"] + 1 >= 8, "此模型的 horizon 无法执行 8 步")
-    require(not metadata["smoke_test"], "请选择正式训练的 checkpoint")
+    require(cfg["horizon"] - cfg["n_obs_steps"] + 1 >= 8, "This model cannot execute 8 steps with its prediction horizon")
+    require(not metadata["smoke_test"], "Select a checkpoint from a full training run")
     rng = random.Random(seed)
     configs = list(range(budget))
     rng.shuffle(configs)
@@ -85,23 +85,23 @@ def summarize(plan_path):
     records = []
     for index, trial in enumerate(plan["trials"]):
         path = root / "trials" / f"{index:04d}" / "result.json"
-        require(path.is_file(), f"尚未完成计划：缺少 trial {index}；保留原 n_max，不提前结束")
+        require(path.is_file(), f"Evaluation plan is incomplete: trial {index} is missing; retain the original n_max and complete the planned budget")
         row = read_json(path)
-        require(all(row[k] == v for k, v in trial.items()), f"trial {index} 与计划不匹配")
-        require(row["checkpoint_sha256"] == plan["checkpoint_sha256"], "评测混用了不同权重")
-        require(type(row["success"]) is int and row["success"] in (0, 1), "STEP 只接受二元成功标签")
-        require(row["frames"] > 0, f"trial {index} 未执行 policy；请检查并保留失败尝试记录")
+        require(all(row[k] == v for k, v in trial.items()), f"trial {index} does not match the plan")
+        require(row["checkpoint_sha256"] == plan["checkpoint_sha256"], "Evaluation results contain different model weights")
+        require(type(row["success"]) is int and row["success"] in (0, 1), "STEP accepts only binary success labels")
+        require(row["frames"] > 0, f"trial {index} did not execute the policy; investigate and retain failed-attempt records")
         row["video"] = str(path.parent / "wrist.mp4")
         records.append(row)
     require(
         [r["started_at"] for r in records] == sorted(r["started_at"] for r in records),
-        "实际执行顺序与预先固定的计划不一致，不能重排结果用于 STEP",
+        "The execution order differs from the fixed plan; do not reorder outcomes for STEP",
     )
     # Plan order is randomized before evaluation; never sort by outcome or reshuffle it.
     names = ["diffusion_h4", "diffusion_h8"]
     grouped = [[r for r in records if r["policy"] == name] for name in names]
-    require([r["config_id"] for r in grouped[0]] == [r["config_id"] for r in grouped[1]], "初始场景未对齐")
-    require(all(len(rows) == plan["n_max"] for rows in grouped), "每种配置的 trial 数与预算不同")
+    require([r["config_id"] for r in grouped[0]] == [r["config_id"] for r in grouped[1]], "Initial configurations are not aligned")
+    require(all(len(rows) == plan["n_max"] for rows in grouped), "The trial count per configuration does not match the budget")
     sequences = [[row["success"] for row in rows] for rows in grouped]
     write_json(
         root / "step_sequences.json",

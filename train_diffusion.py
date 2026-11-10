@@ -98,21 +98,21 @@ def main():
     p.add_argument("--output", type=Path, default=BASE / "runs/diffusion_cube")
     p.add_argument("--device", choices=["auto", "cpu", "mps", "cuda"], default="auto")
     p.add_argument("--batch-size", type=int)
-    p.add_argument("--steps", type=int, help="总学习率计划步数；续训时保持原值")
-    p.add_argument("--stop-after", type=int, help="到此全局步数保存并结束，不改变学习率计划")
-    p.add_argument("--inspect", action="store_true", help="预处理数据并显示划分，不训练")
-    p.add_argument("--smoke-test", action="store_true", help="真实数据训练两步，验证保存及重载")
-    p.add_argument("--resume", type=Path, help="恢复本脚本保存的 checkpoint 目录")
+    p.add_argument("--steps", type=int, help="Total learning-rate schedule steps; keep unchanged when resuming")
+    p.add_argument("--stop-after", type=int, help="Save and stop at this global step without changing the learning-rate schedule")
+    p.add_argument("--inspect", action="store_true", help="Prepare data and display the split without training")
+    p.add_argument("--smoke-test", action="store_true", help="Train two steps on real data and check saving and reloading")
+    p.add_argument("--resume", type=Path, help="Resume a checkpoint directory saved by this script")
     a = p.parse_args()
     settings = read_json(a.resume / "training_metadata.json")["settings"] if a.resume else read_json(a.config)
     for arg, key in [(a.batch_size, "batch_size"), (a.steps, "steps")]:
         if arg is not None:
             settings[key] = arg
-    require(settings["success_only"] is True, "按本次要求，训练只允许成功演示")
+    require(settings["success_only"] is True, "Training requires successful demonstrations only")
     if a.smoke_test:
         settings.update(steps=2, batch_size=2, eval_freq=2, save_freq=2, val_batches=1, num_workers=0)
     for key in ("steps", "batch_size", "save_freq", "eval_freq", "val_batches"):
-        require(settings[key] > 0, f"{key} 必须为正数")
+        require(settings[key] > 0, f"{key} must be positive")
     prepared = prepare_data(
         a.data, a.prepared_data, settings["trim_first_frames"], settings["trim_last_frames"]
     )
@@ -136,7 +136,7 @@ def main():
     )
     if a.inspect:
         return
-    require(versions()["lerobot"] == "0.7.0", "请使用 requirements-diffusion.txt 中的 LeRobot 版本")
+    require(versions()["lerobot"] == "0.7.0", "Use the LeRobot version specified in requirements-diffusion.txt")
     from lerobot.datasets.sampler import EpisodeAwareSampler
     from lerobot.policies import make_pre_post_processors
     from lerobot.policies.diffusion import DiffusionPolicy
@@ -157,13 +157,13 @@ def main():
     }
     if a.resume:
         old = read_json(a.resume / "training_metadata.json")
-        require(old["dataset"]["sha256"] == manifest["sha256"], "恢复训练的数据内容发生变化")
-        require(old["settings"] == settings, "恢复时必须使用原训练设置")
-        require(output == a.resume.expanduser().resolve().parent.parent, "恢复时 --output 必须为原 run 目录")
+        require(old["dataset"]["sha256"] == manifest["sha256"], "Dataset contents changed since the checkpoint was saved")
+        require(old["settings"] == settings, "Resuming requires the original training settings")
+        require(output == a.resume.expanduser().resolve().parent.parent, "When resuming, --output must be the original run directory")
         policy, pre, post = load_policy(a.resume, device)
         cfg = policy.config
     else:
-        require(not output.exists(), f"输出目录已存在，请换 --output 或使用 --resume: {output}")
+        require(not output.exists(), f"Output directory already exists; choose another --output or use --resume: {output}")
         cfg = make_policy_config(settings, manifest["features"], device)
         policy = DiffusionPolicy(cfg).to(device)
         pre, post = make_pre_post_processors(cfg, dataset_stats=train_stats(rows, manifest["train_episodes"]))
@@ -217,13 +217,13 @@ def main():
         step, best = state["step"], state["best_val"]
         restore_rng(state["rng"])
     stop_at = settings["steps"] if a.stop_after is None else a.stop_after
-    require(step < stop_at <= settings["steps"], "停止步数必须大于 checkpoint 步数且不超过总计划")
+    require(step < stop_at <= settings["steps"], "The stopping step must exceed the checkpoint step and cannot exceed the total schedule")
     stop_requested = False
 
     def request_stop(signum, frame):
         nonlocal stop_requested
         stop_requested = True
-        print("收到停止请求；当前训练步结束后验证并保存 checkpoint。", flush=True)
+        print("Stop requested; validation and checkpoint saving will follow the current training step.", flush=True)
 
     signal.signal(signal.SIGINT, request_stop)
     signal.signal(signal.SIGTERM, request_stop)
@@ -243,7 +243,7 @@ def main():
                     batch[IMAGE] = jitter(batch[IMAGE])
                 optimizer.zero_grad(set_to_none=True)
                 loss, _ = policy(pre(batch))
-                require(torch.isfinite(loss).item(), f"step {step}: loss 非有限数")
+                require(torch.isfinite(loss).item(), f"step {step}: loss is not finite")
                 loss.backward()
                 torch.nn.utils.clip_grad_norm_(
                     policy.parameters(), settings["grad_clip_norm"], error_if_nonfinite=True
@@ -261,7 +261,7 @@ def main():
                 is_best = False
                 if step % settings["eval_freq"] == 0 or stopping:
                     record["val_loss"] = validation(policy, pre, val_loader, settings["seed"] + 1)
-                    require(math.isfinite(record["val_loss"]), "验证 loss 非有限数；不覆盖最佳模型")
+                    require(math.isfinite(record["val_loss"]), "Validation loss is not finite; the best checkpoint will not be overwritten")
                     is_best = record["val_loss"] < best
                     best = min(best, record["val_loss"])
                 log.write(json.dumps(record) + "\n")
@@ -289,7 +289,7 @@ def main():
         obs = {k: sample[k][-1].unsqueeze(0) for k in cfg.input_features}
         with torch.inference_mode():
             action = reload_post(reloaded.select_action(reload_pre(obs)))
-        require(action.shape == (1, 6) and torch.isfinite(action).all().item(), "重载后动作检查失败")
+        require(action.shape == (1, 6) and torch.isfinite(action).all().item(), "The reloaded model failed the action check")
         report = {
             "passed": True,
             "train_steps": step,

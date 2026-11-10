@@ -62,10 +62,10 @@ def test_success_selection_ignores_pending_and_splits_whole_episodes(dataset):
 
 def test_missing_saved_labels_and_files_are_rejected(dataset):
     (dataset / "meta/manual_outcomes.jsonl").write_text("")
-    with pytest.raises(ValueError, match="标签"):
+    with pytest.raises(ValueError, match="labels"):
         inspect_data(dataset, read_json(BASE / "diffusion_config.json"))
     (dataset / f"videos/{IMAGE}/chunk-000/file-000.mp4").unlink()
-    with pytest.raises(ValueError, match="缺少数据"):
+    with pytest.raises(ValueError, match="missing data"):
         inspect_data(dataset, read_json(BASE / "diffusion_config.json"))
 
 
@@ -111,7 +111,7 @@ def test_plan_precommits_budget_and_matched_randomized_scenes(tmp_path):
     h8 = [r["config_id"] for r in plan["trials"] if r["execution_horizon"] == 8]
     assert h4 == h8 and len(set(h4)) == 25
     assert plan["alpha_pair"] == 0.1 and plan["n_max"] == 25
-    with pytest.raises(ValueError, match="至少 25"):
+    with pytest.raises(ValueError, match="at least 25"):
         make_plan(checkpoint, tmp_path / "too_small", 24, 123, 60)
     with pytest.raises(FileExistsError):
         make_plan(checkpoint, output, 25, 123, 60)

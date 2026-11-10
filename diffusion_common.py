@@ -76,24 +76,24 @@ def seed_all(seed):
 def inspect_data(root, config):
     root = Path(root).expanduser().resolve()
     info = read_json(root / "meta/info.json")
-    require(info["codebase_version"] == "v3.0", "需要完整的 LeRobot v3 数据目录")
+    require(info["codebase_version"] == "v3.0", "A complete LeRobot v3 dataset directory is required")
     features = info["features"]
     for key in ("action", "observation.state"):
         require(
             features[key]["shape"] == [6] and features[key]["names"] == JOINTS,
-            f"{key} 的关节维度或顺序与 SO-101 不一致",
+            f"{key} joint dimensions or order do not match SO-101",
         )
-    require(features[IMAGE]["shape"][-1] == 3, "需要 RGB wrist 相机")
-    require(info["fps"] > 0, "无效 fps")
+    require(features[IMAGE]["shape"][-1] == 3, "An RGB wrist camera is required")
+    require(info["fps"] > 0, "Invalid fps")
     episodes = []
     for path in sorted((root / "meta/episodes").rglob("*.parquet")):
         episodes.extend(pq.read_table(path).to_pylist())
     episodes.sort(key=lambda r: r["episode_index"])
     require(
         [r["episode_index"] for r in episodes] == list(range(info["total_episodes"])),
-        "episode 元数据不完整或重复",
+        "Episode metadata is incomplete or duplicated",
     )
-    require(sum(r["length"] for r in episodes) == info["total_frames"], "元数据帧数不一致")
+    require(sum(r["length"] for r in episodes) == info["total_frames"], "Metadata frame counts do not match")
     for row in episodes:
         data = root / info["data_path"].format(
             chunk_index=row["data/chunk_index"], file_index=row["data/file_index"]
@@ -103,7 +103,7 @@ def inspect_data(root, config):
             chunk_index=row[f"videos/{IMAGE}/chunk_index"],
             file_index=row[f"videos/{IMAGE}/file_index"],
         )
-        require(data.is_file() and video.is_file(), f"episode {row['episode_index']} 缺少数据或视频")
+        require(data.is_file() and video.is_file(), f"episode {row['episode_index']} has missing data or video")
     # A pending label is an intent, never evidence that an episode was saved.
     labels = {}
     journal = root / "meta/manual_outcomes.jsonl"
@@ -111,20 +111,20 @@ def inspect_data(root, config):
         for line in journal.read_text().splitlines():
             row = json.loads(line)
             if row.get("status") == "saved":
-                require(type(row.get("success")) is bool, "success 标签必须为布尔值")
+                require(type(row.get("success")) is bool, "The success label must be a boolean")
                 labels[row["episode_index"]] = row["success"]
     all_ids = list(range(info["total_episodes"]))
     if config["success_only"]:
-        require(all(i in labels for i in all_ids), "缺少已保存的成功标签；检查日志或显式使用 --all-episodes")
+        require(all(i in labels for i in all_ids), "Missing saved success labels; check the outcome journal")
         selected = [i for i in all_ids if labels[i]]
     else:
         selected = all_ids
-    require(len(selected) >= 2, "至少需要两条符合条件的演示")
-    require(0 < config["val_fraction"] < 1, "val_fraction 必须在 0 和 1 之间")
+    require(len(selected) >= 2, "At least two eligible demonstrations are required")
+    require(0 < config["val_fraction"] < 1, "val_fraction must be between 0 and 1")
     shuffled = selected.copy()
     random.Random(config["seed"]).shuffle(shuffled)
     n_val = max(1, round(len(selected) * config["val_fraction"]))
-    require(n_val < len(selected), "验证集划分后训练集为空")
+    require(n_val < len(selected), "The training split is empty after validation splitting")
     val = sorted(shuffled[:n_val])
     train = sorted(shuffled[n_val:])
     # Hash every source file, including videos, so a relocated dataset can be verified.
@@ -159,7 +159,7 @@ def make_policy_config(settings, features, device):
 
     require(
         1 <= settings["n_action_steps"] <= settings["horizon"] - settings["n_obs_steps"] + 1,
-        "执行长度必须 <= horizon - n_obs_steps + 1",
+        "Execution horizon must be <= horizon - n_obs_steps + 1",
     )
     ft = dataset_to_policy_features(features)
     return DiffusionConfig(
@@ -197,7 +197,7 @@ def train_stats(rows, train_ids):
                 key, stat = name[6:].rsplit("/", 1)
                 if key in ("action", "observation.state", IMAGE):
                     episode_stats.setdefault(key, {})[stat] = np.asarray(value)
-        require(bool(episode_stats), "需要每条 episode 的统计量")
+        require(bool(episode_stats), "Per-episode statistics are required")
         stats.append(episode_stats)
     return {
         k: {s: torch.as_tensor(v, dtype=torch.float32) for s, v in d.items()}
@@ -227,7 +227,7 @@ def load_policy(checkpoint, device, execution_horizon=None):
     cfg = DiffusionConfig.from_pretrained(checkpoint)
     cfg.device = device
     if execution_horizon is not None:
-        require(1 <= execution_horizon <= cfg.horizon - cfg.n_obs_steps + 1, "执行长度超出预测范围")
+        require(1 <= execution_horizon <= cfg.horizon - cfg.n_obs_steps + 1, "Execution horizon exceeds the prediction range")
         cfg.n_action_steps = execution_horizon
     policy = DiffusionPolicy.from_pretrained(checkpoint, config=cfg, strict=True).eval()
     pre, post = make_pre_post_processors(

@@ -62,41 +62,41 @@ def terminal_result():
         return {"success": 1, "partial_score": 1.0, "reason": "full_success"}
     if line and line[0] in ("f", "q"):
         partial = float(line[1]) if len(line) > 1 else 0.0
-        require(partial in (0.0, 0.25, 0.5, 0.75), "失败的 partial score 应为 0/0.25/0.5/0.75")
+        require(partial in (0.0, 0.25, 0.5, 0.75), "Failure partial scores must be 0, 0.25, 0.5, or 0.75")
         return {
             "success": 0,
             "partial_score": partial,
             "reason": line[2] if len(line) > 2 else "operator_stop",
         }
-    print("s + Enter = 完整成功；f 0.5 grasp_failed + Enter = 失败；q + Enter = 停止", flush=True)
+    print("s + Enter = full success; f 0.5 grasp_failed + Enter = failure; q + Enter = stop", flush=True)
     return None
 
 
 def main():
     p = argparse.ArgumentParser(description=__doc__)
     p.add_argument("--plan", type=Path, required=True)
-    p.add_argument("--trial", type=int, required=True, help="plan.json 中 trial 的编号，从 0 开始")
+    p.add_argument("--trial", type=int, required=True, help="Zero-based trial index in plan.json")
     p.add_argument("--robot-config", type=Path, default=BASE / "config.json")
     p.add_argument("--device", default="auto", choices=["auto", "cpu", "cuda", "mps"])
-    p.add_argument("--dry-run", action="store_true", help="检查计划、checkpoint、相机配置；不连接硬件")
+    p.add_argument("--dry-run", action="store_true", help="Check the plan, checkpoint, and camera configuration without connecting hardware")
     a = p.parse_args()
     plan = read_json(a.plan)
-    require(0 <= a.trial < len(plan["trials"]), "trial 编号不在计划中")
+    require(0 <= a.trial < len(plan["trials"]), "Trial index is outside the plan")
     trial = plan["trials"][a.trial]
     checkpoint = Path(plan["checkpoint"]).expanduser().resolve()
-    require(checkpoint_hash(checkpoint) == plan["checkpoint_sha256"], "checkpoint 权重与预先固定的计划不一致")
+    require(checkpoint_hash(checkpoint) == plan["checkpoint_sha256"], "Checkpoint weights do not match the fixed evaluation plan")
     metadata = read_json(checkpoint / "training_metadata.json")
-    require(not metadata["smoke_test"], "smoke-test checkpoint 仅用于软件验证，不能用于实机评测")
+    require(not metadata["smoke_test"], "Smoke-test checkpoints are for software checks only and cannot be used for robot evaluation")
     robot_cfg = read_json(a.robot_config)
     fps = metadata["dataset"]["fps"]
     camera = robot_cfg["cameras"]["wrist"]
     shape = metadata["dataset"]["features"][IMAGE]["shape"]
-    require(camera["type"] == "opencv", "当前部署支持采集时的 OpenCV wrist 相机")
+    require(camera["type"] == "opencv", "Deployment requires the OpenCV wrist camera used during data collection")
     require(
         [camera["height"], camera["width"], 3] == shape and camera["fps"] == fps,
-        "部署相机分辨率/fps 必须与采集相同",
+        "Deployment camera resolution and fps must match data collection",
     )
-    require(robot_cfg["fps"] == fps, "机器人控制 fps 与数据不一致")
+    require(robot_cfg["fps"] == fps, "Robot control fps does not match the dataset")
     policy, pre, post = load_policy(checkpoint, device_for(a.device), trial["execution_horizon"])
     print(
         json.dumps(
@@ -115,14 +115,14 @@ def main():
     for previous in range(a.trial):
         require(
             (evaluation_root / "trials" / f"{previous:04d}" / "result.json").is_file(),
-            f"请按预先随机化的计划顺序执行；尚缺 trial {previous}",
+            f"Follow the pre-randomized plan order; trial {previous} is still missing",
         )
     from lerobot.cameras.opencv import OpenCVCameraConfig
     from lerobot.robots.so_follower import SO101Follower, SO101FollowerConfig
 
     calibration = Path(robot_cfg["follower_calibration_file"]).expanduser().resolve()
-    require(calibration.is_file(), f"请更新 {a.robot_config} 中 follower_calibration_file: {calibration}")
-    require(Path(robot_cfg["follower_port"]).exists(), "follower 串口不存在，请更新机器人配置")
+    require(calibration.is_file(), f"Update follower_calibration_file in {a.robot_config}: {calibration}")
+    require(Path(robot_cfg["follower_port"]).exists(), "The follower serial port does not exist; update the robot configuration")
     settings = metadata["settings"]
     robot = SO101Follower(
         SO101FollowerConfig(
@@ -175,7 +175,7 @@ def main():
         seed_all(trial["seed"])
         writer = TrialVideo(output / "wrist.mp4", fps, shape[0], shape[1])
         print(
-            "开始。完整成功（放入托盘、松爪并抬起）时输入 s + Enter；失败输入 f 0.5 原因 + Enter；Ctrl-C 停止。",
+            "Starting. For full success (place in tray, release, and lift), enter s then Enter; for failure enter f 0.5 reason then Enter; Ctrl-C stops.",
             flush=True,
         )
         start = time.perf_counter()
@@ -200,7 +200,7 @@ def main():
                     with torch.inference_mode():
                         action = post(policy.select_action(pre(tensors(observation)))).squeeze(0).cpu()
                     require(
-                        action.shape == (6,) and torch.isfinite(action).all().item(), "policy 输出无效动作"
+                        action.shape == (6,) and torch.isfinite(action).all().item(), "The policy returned an invalid action"
                     )
                     latency = time.perf_counter() - infer_start
                     latencies.append(latency)

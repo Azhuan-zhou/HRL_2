@@ -40,18 +40,18 @@ def prepare_data(source, output=DEFAULT_PREPARED, first=15, last=15):
     )
 
     source, output = Path(source).expanduser().resolve(), Path(output).expanduser().resolve()
-    require(first >= 0 and last >= 0, "裁剪帧数不能为负数")
+    require(first >= 0 and last >= 0, "Trim frame counts must be nonnegative")
     # A prepared dataset is already trimmed; never apply the operation twice.
     existing = source / "meta/preparation.json"
     if existing.is_file():
         previous = read_json(existing)
         require(
             previous["trim_first_frames"] == first and previous["trim_last_frames"] == last,
-            "已预处理的数据裁剪设置不同，请从原始数据重新处理",
+            "Trim settings differ from the prepared dataset; prepare again from the original data",
         )
-        require(previous["success_only"] is True, "预处理数据必须仅包含成功演示")
+        require(previous["success_only"] is True, "Prepared data must contain only successful demonstrations")
         return source
-    require(source != output and source not in output.parents, "处理后的数据请放在原始数据目录之外")
+    require(source != output and source not in output.parents, "Store prepared data outside the original dataset directory")
     hashes = source_hashes(source)
     if output.exists():
         previous = read_json(output / "meta/preparation.json")
@@ -59,33 +59,33 @@ def prepare_data(source, output=DEFAULT_PREPARED, first=15, last=15):
             previous["source_sha256"] == hashes
             and previous["trim_first_frames"] == first
             and previous["trim_last_frames"] == last,
-            "预处理缓存与原始数据或裁剪参数不匹配，请换输出目录",
+            "The prepared cache does not match the source data or trim settings; choose another output directory",
         )
-        require((output / "meta/info.json").is_file(), "预处理缓存不完整")
+        require((output / "meta/info.json").is_file(), "The prepared cache is incomplete")
         return output
     info = read_json(source / "meta/info.json")
-    require(info["codebase_version"] == "v3.0", "需要 LeRobot v3 数据")
+    require(info["codebase_version"] == "v3.0", "A LeRobot v3 dataset is required")
     require(
         [k for k, v in info["features"].items() if v["dtype"] in ("video", "image")] == [IMAGE],
-        "此预处理器针对本次采集的单 wrist 相机数据",
+        "This preprocessor supports the single wrist-camera dataset collected for this task",
     )
     labels = {}
     for line in (source / "meta/manual_outcomes.jsonl").read_text().splitlines():
         entry = json.loads(line)
         if entry.get("status") == "saved":
-            require(type(entry.get("success")) is bool, "success 标签必须为布尔值")
+            require(type(entry.get("success")) is bool, "The success label must be a boolean")
             labels[entry["episode_index"]] = entry["success"]
     rows = []
     for path in sorted((source / "meta/episodes").rglob("*.parquet")):
         rows.extend(pq.read_table(path).to_pylist())
     rows.sort(key=lambda r: r["episode_index"])
-    require([r["episode_index"] for r in rows] == list(range(info["total_episodes"])), "episode 元数据不完整")
-    require(all(r["episode_index"] in labels for r in rows), "缺少 saved 成功/失败标签，不能猜测")
+    require([r["episode_index"] for r in rows] == list(range(info["total_episodes"])), "Episode metadata is incomplete")
+    require(all(r["episode_index"] in labels for r in rows), "Missing saved success/failure labels; labels cannot be inferred")
     kept = [r for r in rows if labels[r["episode_index"]]]
-    require(bool(kept), "没有成功演示")
-    require(all(r["length"] > first + last for r in kept), "有成功演示过短，裁剪后没有可用帧")
+    require(bool(kept), "No successful demonstrations were found")
+    require(all(r["length"] > first + last for r in kept), "A successful episode is too short to retain any frames after trimming")
     temp = output.with_name(output.name + ".preparing")
-    require(not temp.exists(), f"存在未完成的预处理目录，请保留检查或更换输出目录: {temp}")
+    require(not temp.exists(), f"An incomplete preparation directory exists; retain it for inspection or choose another output directory: {temp}")
     for folder in ("meta/episodes/chunk-000", "data/chunk-000", f"videos/{IMAGE}/chunk-000"):
         (temp / folder).mkdir(parents=True, exist_ok=True)
     tables, episode_rows, all_stats, mapping, video_groups = [], [], [], [], {}
@@ -102,7 +102,7 @@ def prepare_data(source, output=DEFAULT_PREPARED, first=15, last=15):
                 data_files[relative] = pq.read_table(source / relative)
             table = data_files[relative]
             table = table.filter(pc.equal(table["episode_index"], old_id)).slice(first, length)
-            require(table.num_rows == length, f"episode {old_id} 的数据帧数与元数据不符")
+            require(table.num_rows == length, f"Episode {old_id} data frame count does not match its metadata")
             values = {
                 "episode_index": np.full(length, new_id, dtype=np.int64),
                 "frame_index": np.arange(length, dtype=np.int64),
@@ -116,7 +116,7 @@ def prepare_data(source, output=DEFAULT_PREPARED, first=15, last=15):
                 )
             arrays = {k: np.asarray(table[k].to_pylist()) for k in table.column_names}
             require(
-                all(np.isfinite(arrays[k]).all() for k in ("action", "observation.state")), "数据含 NaN/Inf"
+                all(np.isfinite(arrays[k]).all() for k in ("action", "observation.state")), "Data contains NaN or Inf"
             )
             stats = compute_episode_stats(arrays, info["features"])
             all_stats.append(stats)
@@ -168,7 +168,7 @@ def prepare_data(source, output=DEFAULT_PREPARED, first=15, last=15):
                         begin, end, new_id = segments[segment_index]
                         if frame_index < begin:
                             continue
-                        require(frame_index < end, f"视频时间戳跳过目标帧: {relative}, {frame_index}")
+                        require(frame_index < end, f"Video timestamps skipped a target frame: {relative}, {frame_index}")
                         if container is None:
                             target = temp / f"videos/{IMAGE}/chunk-000/file-{new_id:03d}.mp4"
                             container = av.open(str(target), mode="w")
@@ -190,20 +190,20 @@ def prepare_data(source, output=DEFAULT_PREPARED, first=15, last=15):
                                 container.mux(packet)
                             container.close()
                             container = None
-                            require(encoded == end - begin, "视频帧数不完整")
+                            require(encoded == end - begin, "Video frame count is incomplete")
                             image_stats = get_feature_stats(np.stack(sampled), axis=(0, 2, 3), keepdims=True)
                             all_stats[new_id][IMAGE] = {
                                 k: np.array([encoded]) if k == "count" else np.squeeze(v / 255.0, axis=0)
                                 for k, v in image_stats.items()
                             }
                             print(
-                                f"已处理成功演示 {new_id + 1}/{len(kept)}：原 episode {mapping[new_id]['source_episode_index']}，保留 {encoded} 帧",
+                                f"Prepared successful episode {new_id + 1}/{len(kept)}: source episode {mapping[new_id]['source_episode_index']}, retained {encoded} frames",
                                 flush=True,
                             )
                             segment_index += 1
                             if segment_index == len(segments):
                                 break
-                require(segment_index == len(segments), f"视频 {relative} 提前结束")
+                require(segment_index == len(segments), f"Video {relative} ended early")
             finally:
                 if container is not None:
                     container.close()
@@ -260,9 +260,9 @@ def prepare_data(source, output=DEFAULT_PREPARED, first=15, last=15):
         write_json(temp / "meta/preparation.json", preparation)
         temp.rename(output)
     except BaseException:
-        print(f"预处理未完成，原始数据未修改；中间结果保留在 {temp}", flush=True)
+        print(f"Preparation did not finish; original data was not modified. Intermediate files remain at {temp}", flush=True)
         raise
-    print(f"已保存：{output}\n{len(kept)} 条成功演示，{cursor} 帧；失败演示完全排除。", flush=True)
+    print(f"Saved: {output}\n{len(kept)} successful episodes, {cursor} frames; failed episodes were excluded.", flush=True)
     return output
 
 

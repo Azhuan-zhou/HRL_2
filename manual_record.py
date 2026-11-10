@@ -47,7 +47,7 @@ class TerminalEvents(dict):
             if line == '':
                 return True
             if line is not None:
-                print('请按 Enter；退出请输 q 后按 Enter。', flush=True)
+                print('Press Enter to continue, or q then Enter to quit.', flush=True)
         return super().__getitem__(key)
 
 
@@ -67,7 +67,7 @@ def has_pending_frames(dataset):
     buffer = getattr(dataset, 'episode_buffer', None)
     if buffer is not None:
         return buffer.get('size', 0) > 0
-    raise ValueError('LeRobot 数据集缺少 has_pending_frames 接口，无法确认当前片段。')
+    raise ValueError('The LeRobot dataset has no has_pending_frames interface; the current episode cannot be verified.')
 
 
 class ManualController:
@@ -92,9 +92,9 @@ class ManualController:
             result = original(*args, **kwargs)
             append_label(journal, {**record, 'status': 'saved'})
             self.saved += 1
-            print(f'已保存 episode {index}: {self.outcome}；本次 {self.saved}/{self.target}', flush=True)
+            print(f'Saved episode {index}: {self.outcome}; session progress {self.saved}/{self.target}', flush=True)
             if self.saved == self.target:
-                print('已达到目标，仍可 Enter 继续录制；等待时 q + Enter 退出。', flush=True)
+                print('Target reached. Press Enter to record more, or q then Enter while waiting to quit.', flush=True)
             return result
 
         dataset.save_episode = save
@@ -109,23 +109,23 @@ class ManualController:
         events = self.events
         args = dict(kwargs, events=events, control_time_s=math.inf)
         events.begin('waiting')
-        print('\n等待开始：可遥操作复位（不录数据）。Enter 开始；q + Enter 退出。', flush=True)
+        print('\nWaiting: teleoperate to reset without recording. Enter starts; q then Enter quits.', flush=True)
         self.loop(**dict(args, dataset=None))
         events.begin('recording')
-        print('正在录制：Enter 结束本条（无时间上限）。', flush=True)
+        print('Recording: press Enter to end this episode (no time limit).', flush=True)
         self.loop(**args)
         events.begin('label')
         if not has_pending_frames(dataset):
-            print('没有采集到帧，本条不保存。', flush=True)
+            print('No frames were collected; this episode will not be saved.', flush=True)
             events['rerecord_episode'] = True
             return
-        print('录制已停止。机械臂暂停跟随。输入 s 成功 / f 失败，然后 Enter（两者均保存）：', flush=True)
+        print('Recording stopped. Robot following is paused. Enter s for success or f for failure, then Enter (both are saved):', flush=True)
         while True:
             choice = events.line(block=True)
             if choice in ('s', 'f'):
                 self.outcome = 'success' if choice == 's' else 'failure'
                 return
-            print('请输入 s 或 f，再按 Enter。', flush=True)
+            print('Enter s or f, then press Enter.', flush=True)
 
 
 def loop_signature(loop):
@@ -145,18 +145,18 @@ def loop_signature(loop):
         if not callable(wrapped):
             break
         current = inspect.unwrap(wrapped)
-    raise ValueError(f'无法确认 LeRobot record_loop 接口: {inspect.signature(loop)}；未连接硬件。')
+    raise ValueError(f'Cannot verify the LeRobot record_loop interface: {inspect.signature(loop)}; hardware was not connected.')
 
 
 def run(cli_args, target):
     if not sys.stdin.isatty():
-        raise ValueError('手动录制需要交互式终端，请在 Terminal 或 IDE Terminal 中运行。')
+        raise ValueError('Manual recording requires an interactive terminal. Run this in Terminal or an IDE terminal.')
     from lerobot.scripts import lerobot_record as module
 
     original_record = inspect.unwrap(module.record)
     loop_signature(module.record_loop)
     if original_record is module.record:
-        raise ValueError('无法解析 LeRobot record 的配置装饰器；未连接硬件。')
+        raise ValueError('Cannot inspect the LeRobot record configuration decorator; hardware was not connected.')
     controller = ManualController(module.record_loop, target)
     old_loop, old_listener = module.record_loop, module.init_keyboard_listener
     old_argv = sys.argv
@@ -175,7 +175,7 @@ def run(cli_args, target):
         module.register_third_party_plugins()
         module.parser.wrap()(manual_record)()
     except ManualStop:
-        print('手动录制已结束。', flush=True)
+        print('Manual recording finished.', flush=True)
     finally:
         module.record_loop, module.init_keyboard_listener = old_loop, old_listener
         sys.argv = old_argv
