@@ -1,0 +1,11 @@
+{
+  "dataset": {"repo_id": "local/task1_home_clean", "root": "data/task1_home_clean"},
+  "policy": {"type": "act", "push_to_hub": false, "chunk_size": 50, "n_action_steps": 25,
+             "use_amp": true, "optimizer_lr": 5e-5, "optimizer_lr_backbone": 5e-5},
+  "output_dir": "runs/v11_home_c50x25",
+  "job_name": "v11_home_c50x25",
+  "batch_size": 128,
+  "num_workers": 16,
+  "steps": 10000,
+  "save_freq": 2000
+}

@@ -7,6 +7,11 @@ from pathlib import Path
 import select
 import sys
 import termios
+import time
+
+HOME_SECONDS = 3.0  # 回原位用时；太快会冲击，太慢浪费时间
+# 固定起点 Home：方块和托盘都在腕部相机画面里（用 pick_home.py 选定，见 configs/home_pose_view.jpg）。
+HOME = {'shoulder_pan': -9.7, 'shoulder_lift': -70.0, 'elbow_flex': 46.1, 'wrist_flex': 74.8, 'wrist_roll': -99.6, 'gripper': 65.4}  # configs/home_pose.json (picked with pick_home.py)
 
 
 class ManualStop(Exception):
@@ -70,6 +75,30 @@ def has_pending_frames(dataset):
     raise ValueError('LeRobot 数据集缺少 has_pending_frames 接口，无法确认当前片段。')
 
 
+def go_home(robot, teleop, home, fps, seconds=HOME_SECONDS):
+    """Glide follower and leader to the episode start pose. The leader stays powered there (so it
+    doesn't fall under gravity and drag the follower along) until release_leader() at record start."""
+    buses = [robot.bus] + ([teleop.bus] if hasattr(teleop, 'bus') else [])
+    starts = [bus.sync_read('Present_Position') for bus in buses]
+    for bus in buses[1:]:
+        bus.enable_torque()
+    try:
+        steps = max(1, int(seconds * fps))
+        for i in range(1, steps + 1):
+            t = i / steps
+            for bus, start in zip(buses, starts):
+                bus.sync_write('Goal_Position', {m: start[m] + (home[m] - start[m]) * t for m in home})
+            time.sleep(1 / fps)
+    except BaseException:
+        release_leader(teleop)
+        raise
+
+
+def release_leader(teleop):
+    if hasattr(teleop, 'bus'):
+        teleop.bus.disable_torque()
+
+
 class ManualController:
     def __init__(self, loop, target):
         self.loop = loop
@@ -78,6 +107,8 @@ class ManualController:
         self.events = TerminalEvents()
         self.installed = False
         self.outcome = None
+        self.home = HOME
+        self.homed = False  # moved to HOME once before the first episode
 
     def install_save(self, dataset):
         original = dataset.save_episode
@@ -108,9 +139,15 @@ class ManualController:
             self.install_save(dataset)
         events = self.events
         args = dict(kwargs, events=events, control_time_s=math.inf)
+        if not self.homed:
+            print('移动到起始姿态……', flush=True)
+            go_home(kwargs['robot'], kwargs.get('teleop'), self.home, kwargs['fps'])
+            self.homed = True
         events.begin('waiting')
-        print('\n等待开始：可遥操作复位（不录数据）。Enter 开始；q + Enter 退出。', flush=True)
+        print('\n等待开始：机械臂锁在 Home，用手摆好方块和托盘（不录数据）。'
+              '握住主臂后按 Enter 开始（主臂此时断电）；q + Enter 退出。', flush=True)
         self.loop(**dict(args, dataset=None))
+        release_leader(kwargs.get('teleop'))
         events.begin('recording')
         print('正在录制：Enter 结束本条（无时间上限）。', flush=True)
         self.loop(**args)
@@ -124,6 +161,8 @@ class ManualController:
             choice = events.line(block=True)
             if choice in ('s', 'f'):
                 self.outcome = 'success' if choice == 's' else 'failure'
+                print('正在回到原位，请勿触碰机械臂……', flush=True)
+                go_home(kwargs['robot'], kwargs.get('teleop'), self.home, kwargs['fps'])
                 return
             print('请输入 s 或 f，再按 Enter。', flush=True)
 

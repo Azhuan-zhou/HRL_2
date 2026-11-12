@@ -1,0 +1,11 @@
+{
+  "dataset": {"repo_id": "local/cube_placement_clean", "root": "data/cube_placement_clean"},
+  "policy": {"type": "act", "push_to_hub": false, "chunk_size": 100, "n_action_steps": 30,
+             "use_amp": true, "optimizer_lr": 3e-5, "optimizer_lr_backbone": 3e-5},
+  "output_dir": "runs/v5_auto_c100x30",
+  "job_name": "v5_auto_c100x30",
+  "batch_size": 64,
+  "num_workers": 8,
+  "steps": 12500,
+  "save_freq": 2500
+}

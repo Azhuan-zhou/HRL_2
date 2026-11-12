@@ -1,0 +1,11 @@
+{
+  "dataset": {"repo_id": "local/cube_night_clean", "root": "data/cube_night_clean"},
+  "policy": {"type": "act", "push_to_hub": false, "chunk_size": 100, "n_action_steps": 30,
+             "use_amp": true, "optimizer_lr": 5e-5, "optimizer_lr_backbone": 5e-5},
+  "output_dir": "runs/v6_night",
+  "job_name": "v6_night",
+  "batch_size": 128,
+  "num_workers": 16,
+  "steps": 2000,
+  "save_freq": 1000
+}

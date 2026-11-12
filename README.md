@@ -216,29 +216,32 @@ tar xf models.tar && ls
 
 ### 2. 运行前检查
 
-- `configs/v1_eval.json` 的串口和标定目录是从 `config.json` 抄来的（Azhuan 的 Mac）。机械臂插在别的电脑上时，先用 `lerobot-find-port` 查串口，再改 `port` 和 `calibration_dir`。
+- `configs/eval_rollout.json` 的串口和标定目录是这台 Mac 的（`/Users/jiafeng`）。机械臂插在别的电脑上时，先用 `lerobot-find-port` 查串口，再改 `port` 和 `calibration_dir`。旧的 `configs/v1_eval.json` 是给旧版 `lerobot-record` 用的，标定目录还是 Azhuan 的 Mac。
 - 相机 `wrist: 0` 必须是腕部相机，并且和采集数据时用的是同一个，可以用 `python collect.py preview` 确认。
 - 没有 dry-run。第一次运行时手放在电源上，动作不对就立刻断电。
 
 ### 3. 运行
 
+新版 LeRobot（Mac 上 `conda activate lerobot`，即 `~/lerobot` 源码）里 `lerobot-record` 不再接受 `--policy`，改用 `lerobot-rollout` + `configs/eval_rollout.json`（只跑不录，30 秒，mps）。
+
+Dell 上训练的 LeRobot 是带触觉的改版，模型的 `config.json`、`policy_preprocessor.json`、`policy_postprocessor.json` 里多了 tactile 字段（功能是关的），新版不认。从 Dell 拉下新模型后先跑一次（原文件留作 `*.dell.json`，权重不动）：
+
+```bash
+python fix_dell_model.py ~/HRL_models/<模型名>
+```
+
+`~/HRL_models` 里现有四个模型已处理。
+
 在 `HRL_2/` 目录下运行：
 
 ```bash
 M=$HOME/HRL_models
+python eval.py --policy.path=$M/v5_auto_c100x30
 ```
 
-v1：
-```bash
-lerobot-record --config_path=configs/v1_eval.json --policy.path=$M/v1_act --dataset.repo_id=local/eval_v1 --dataset.root=data/eval_v1
-```
+`eval.py` 就是 `lerobot-rollout --config_path=configs/eval_rollout.json`，只多两件事：连上后先用 3 秒移到训练起始姿态（每次测试起点相同），连接偶发 "Incorrect status packet" 时自动重试。方块每次放在同一位置。
 
-v2：
-```bash
-lerobot-record --config_path=configs/v1_eval.json --policy.path=$M/v2_trim20 --dataset.repo_id=local/eval_v2 --dataset.root=data/eval_v2
-```
-
-每次运行，机械臂会自己动 30 秒，同时录一段评估数据。按 **→** 提前结束这一段，按 **Esc** 退出。再跑一次要换名字（比如 `eval_v1b`），否则会因为目录已存在而报错。
+把 `v5_auto_c100x30` 换成 `v1_act`、`v2_trim20`、`v3_c30x10`、`v4_c100x30` 跑其它模型。机械臂会自己动 30 秒，Ctrl+C 提前停；结束后回到起始姿态。时长改 `--duration=60`。
 
 ## 官方参考
 

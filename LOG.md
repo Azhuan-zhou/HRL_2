@@ -32,3 +32,34 @@
 - 检查（和 v1 相同的 30 帧，训练数据，非留出集），chunk 首个动作的平均 |pred−gt|：v1 0.92 / 2.15 / 1.84 / 1.63 / 1.29 / 0.34，v2 0.71 / 0.88 / 1.27 / 1.36 / 1.18 / 0.33。
 - 结论：两个都保留，等真机对比成功率。checkpoint 在 `runs/v2_trim20/checkpoints/last/pretrained_model`。
 
+
+## 数据 cube_placement_clean / 2026-11-11
+- 从 `data/cube_placement/`（52 段）删除 [0,5,30,41,42,49,50]，用 `lerobot-edit-dataset delete_episodes` 生成 `data/cube_placement_clean/`：45 段、39694 帧，全部 success。
+  - 0、30：标 failure。
+  - 5、41、42、49、50：action 全程不变（机械臂没动，疑似 leader 未读到），却标 success。按每段关节 action 的极差扫出来的；v2 无此问题（最小极差 11.8，为已删的 failure 段 1）。
+- `manual_outcomes.jsonl` 按新编号同步复制。
+- 校验：原数据未改；新 45 段 action 与原对应段逐值相同；最短 18.3 秒，最小关节极差 118.6。
+
+## 数据 cube_night_clean / 2026-11-11
+- 从 `data/cube_night/`（22 段、14468 帧）删除 [1,12]，用 `lerobot-edit-dataset delete_episodes` 生成 `data/cube_night_clean/`：20 段、14057 帧，全部 success。
+  - 1：标 failure，action 全程不变（4.9 秒）。
+  - 12：action 全程不变（8.8 秒），却标 success。
+- `manual_outcomes.jsonl` 按新编号同步复制；新 20 段 action 与原对应段逐值相同；最小关节极差 113.1。
+- 已删空目录 `data/auto_cube/`（0 段）。`cube_night` 与 `cube_night_clean` 均已 rsync 到 Dell `~/so101_act/HRL_2/data/`。
+
+## v6_night / 2026-11-11 完成
+- 配置 `configs/v6.json` → `cube_night_clean`（20 段），chunk 100 / n_action_steps 30，batch 128，lr 5e-5，2000 步（约 18 轮）。
+- 命令：`python train_trim.py --drop_first=auto --drop_last=15 --config_path=configs/v6.json`；开头按段删 42–128 帧静止，结尾删 15 帧。日志 `runs/v6_night.train.log`（Dell）。
+- 用时 12 分钟，约 3.2 步/秒，显存 32 GB。loss：3.11（200）→ 0.195（1K）→ 0.101（2K），还在下降。
+- 模型已拉到 Mac `~/HRL_models/v6_night`，已跑 `fix_dell_model.py`。cube_night 起始姿态和 cube_placement 不同，真机跑要加 `--start=night`。
+- 修复 `autocollect/run.py` 的 `in_tray` 返回 np.bool_，导致写 journal 时 json 报错退出（run3 21:27）。
+
+## 数据 task1_home_clean / 2026-11-12
+- `data/task1_home/`（Home 起点，54 段、24050 帧）删除 failure [0,43]；最短 284 帧（约 9.5 秒），没有过短或静止的片段。
+- 用 `lerobot-edit-dataset delete_episodes` 生成 `data/task1_home_clean/`：52 段、22451 帧，全部 success。原始和 clean 两份都已 rsync 到 Dell `~/so101_act/HRL_2/data/`。
+
+## v11_home_c50x25 / 2026-11-12 完成
+- 配置 `configs/v11.json` → `task1_home_clean`（52 段），chunk 50 / n_action_steps 25，batch 128，lr 5e-5，10000 步（约 57 轮），每 2000 步存一次。
+- 命令：`python train_trim.py --drop_first=auto --drop_last=15 --config_path=configs/v11.json`；日志 `runs/v11_home_c50x25.train.log`（Dell）。
+- 拉回 `~/HRL_models/v11_home_4k`、`v11_home_6k`、`v11_home_c50x25`（10k），均已过 `fix_dell_model.py`。最终 loss 0.044。
+- 初测：6k 表现还可以（Home 起步，max_relative_target=null）。
