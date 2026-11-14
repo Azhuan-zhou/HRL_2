@@ -80,15 +80,27 @@ def go_home(robot, teleop, home, fps, seconds=HOME_SECONDS):
     doesn't fall under gravity and drag the follower along) until release_leader() at record start."""
     buses = [robot.bus] + ([teleop.bus] if hasattr(teleop, 'bus') else [])
     starts = [bus.sync_read('Present_Position') for bus in buses]
-    for bus in buses[1:]:
-        bus.enable_torque()
     try:
+        for bus, start in zip(buses[1:], starts[1:]):
+            # Goal = where it is now BEFORE torque on; a stale goal makes every motor lunge at once and
+            # the leader's 5 V supply sags below 4 V ("Input voltage error").
+            bus.sync_write('Goal_Position', start)
+            for attempt in range(3):
+                try:
+                    bus.enable_torque()
+                    break
+                except RuntimeError as e:
+                    if attempt == 2:
+                        raise RuntimeError(f'主臂上电失败（检查主臂 5V 电源是否插好）：{e}') from e
+                    time.sleep(0.5)
         steps = max(1, int(seconds * fps))
         for i in range(1, steps + 1):
             t = i / steps
             for bus, start in zip(buses, starts):
                 bus.sync_write('Goal_Position', {m: start[m] + (home[m] - start[m]) * t for m in home})
             time.sleep(1 / fps)
+        for bus in buses[1:]:
+            bus.disable_torque(['shoulder_pan', 'wrist_roll', 'gripper'])  # don't fall; only gravity joints hold
     except BaseException:
         release_leader(teleop)
         raise
