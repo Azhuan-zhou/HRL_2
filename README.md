@@ -243,6 +243,23 @@ python eval.py --policy.path=$M/v5_auto_c100x30
 
 把 `v5_auto_c100x30` 换成 `v1_act`、`v2_trim20`、`v3_c30x10`、`v4_c100x30` 跑其它模型。机械臂会自己动 30 秒，Ctrl+C 提前停；结束后回到起始姿态。时长改 `--duration=60`。
 
+## 人在回路采集（HIL / DAgger）
+
+按 [LeRobot HIL 文档](https://huggingface.co/docs/lerobot/v0.6.1/en/hil_data_collection)：策略在真机上跑，快失败时人用 leader 臂接管纠正，纠正的片段录成新数据，之后和原数据合并再微调。需要 Mac 上 `conda activate lerobot`（`~/lerobot` 源码，0.6.x），follower 和 leader 都插上。
+
+```bash
+python hil.py --policy.path=<模型目录> --start=home --dataset.repo_id=local/hil_v11 --dataset.root=data/hil_v11
+```
+
+- 先和 eval.py 一样滑到训练起始姿态，看相机窗口按 Enter 开始。
+- **空格**：暂停 / 继续策略。暂停时 leader 会自动转到 follower 当前姿态，方便接手。
+- **Tab**（暂停状态下）：开始 / 结束一次纠正，期间用 leader 遥操作，结束后这段存成一个 episode。
+- **ESC**：结束。默认录 20 次纠正（`--strategy.num_episodes=30` 可改）。
+- 只录纠正片段（`record_autonomous=false`，库的默认），策略自己跑的部分不录。想连自主部分一起录加 `--strategy.record_autonomous=true`，帧上带 `intervention` 标记。
+- 每个模型/每轮用新的 `--dataset.root`，目录已存在会报错。
+- macOS 要给终端开 **辅助功能** 权限（系统设置 → 隐私与安全性 → 辅助功能），否则按键监听退回到终端输入。
+- 配置在 `configs/hil_dagger.json`（串口、标定目录同 `eval_rollout.json`）。
+
 ## 官方参考
 
 - https://huggingface.co/docs/lerobot/so101
