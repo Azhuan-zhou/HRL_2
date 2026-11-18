@@ -1,0 +1,14 @@
+{
+  "dataset": {"repo_id": "local/pick_place", "root": "data/pick_place"},
+  "policy": {"type": "diffusion", "push_to_hub": false,
+             "n_obs_steps": 2, "horizon": 64, "n_action_steps": 30,
+             "resize_shape": [240, 320], "crop_ratio": 0.9,
+             "noise_scheduler_type": "DDIM", "num_inference_steps": 10,
+             "use_amp": true},
+  "output_dir": "runs/v18_pickonly_diffusion",
+  "job_name": "v18_pickonly_diffusion",
+  "batch_size": 128,
+  "num_workers": 16,
+  "steps": 6000,
+  "save_freq": 2000
+}

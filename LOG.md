@@ -40,6 +40,17 @@
 - `manual_outcomes.jsonl` 按新编号同步复制。
 - 校验：原数据未改；新 45 段 action 与原对应段逐值相同；最短 18.3 秒，最小关节极差 118.6。
 
+## v3_c30x10 / v4_c100x30 / 2026-11-11 完成
+- 数据：新的 `data/cube_placement_clean`（11-11 上传，45 段、39694 帧、30 fps、单 wrist 相机，45 段均标成功），不和 v2 数据合并。
+- 两版都用 `train_trim.py` 首尾各丢 20 帧，batch 64，12500 步（样本总量 = 原 batch 8 × 10 万步），lr 3e-5（原 1e-5），AMP 开，8 workers，save_freq 2500。两版同时跑，每版约 3.1 步/秒、约 65 分钟。
+- 提速记录：先按 batch 8 / 10 万步开跑（每版 20 步/秒 = 160 样本/秒，约 80 分钟），3 分钟后停掉；batch 64 + AMP 后每版约 190 样本/秒，只快约 20%，GPU 已到 100%，瓶颈是 480×640 图像过 ResNet。曾短暂试 2 万步，算下来要 1 小时 45 分，又改成 12500 步。三次启动的 runs 目录都还没生成，无残留。
+- v3（`configs/v3.json`）：chunk_size 30 / n_action_steps 10，即预测 1 s、执行 0.33 s（按建议改短 chunk）。
+- v4（`configs/v4.json`）：chunk_size 100 / n_action_steps 30，同 v2 设置，作为新数据上的对照。
+- 用时：v3 66 分钟，v4 67 分钟（16:18 / 16:19 结束），约 20 epoch。
+- loss（第 200 步 → 2K → 5K → 8K → 12.5K 末）：v3 3.78 → 0.233 → 0.102 → 0.076 → 0.059；v4 3.85 → 0.286 → 0.140 → 0.108 → 0.083。两版 chunk 长度不同，loss 不能直接比（v4 要预测 3.3 s，更难）。
+- checkpoint：`runs/v3_c30x10/checkpoints/last/pretrained_model`、`runs/v4_c100x30/checkpoints/last/pretrained_model`（每 2500 步一个，每版 2.9G）。
+- 结论：两个都保留，等真机对比成功率。无视频。
+
 ## 数据 cube_night_clean / 2026-11-11
 - 从 `data/cube_night/`（22 段、14468 帧）删除 [1,12]，用 `lerobot-edit-dataset delete_episodes` 生成 `data/cube_night_clean/`：20 段、14057 帧，全部 success。
   - 1：标 failure，action 全程不变（4.9 秒）。
@@ -113,3 +124,69 @@
 - 数据：`task1_home_b` 录制中，取 16:32 停录时已写完的前 16 段，单独复制成 `data/task1_home_b16`（44858 帧，全部 success，每段 80–130 秒）。
 - `configs/v12.json`：chunk 50 / n_action_steps 25，batch 128，lr 5e-5，4000 步；drop_first=auto / drop_last=15。Dell 上和另一个 GPU 任务共用，约 1.8 步/秒，用时约 37 分钟。
 - 模型 `~/HRL_models/v12_home_b16_2k`、`v12_home_b16_4k`（均已过 fix_dell_model）。真机：`python eval.py --policy.path=... --start=home --robot.max_relative_target=null --duration=150`。
+
+## 数据 cube_stack_merged / 2026-11-16
+- 来源：`~/cube_stack.zip`（微信传来，52 段、120439 帧，全部标成功），解压到 `data/cube_stack/`；`data/task1_home_b_clean/` 从 Mac 同步（32 段的 task1_home_b 去掉失败段 18/21/22/28 后剩 28 段，72005 帧；b16 是 task1_home_b 的前 16 段）。
+- 查重：cube_stack 与 cube_night / cube_placement / task1_home / b16 的 action 哈希、中间帧均无重合。
+- 合并：`lerobot-edit-dataset --operation.type merge` → `data/cube_stack_merged/`，80 段、192444 帧；0–51 段对应 cube_stack，52–79 段对应 b_clean。
+- 校验：抽 6 段首/中/末帧，state/action 完全相同，图像差为 0（视频直接拷贝）。
+
+## v13_stack_merged / 2026-11-16 完成
+- 数据 `data/cube_stack_merged`（80 段、192444 帧）。配置 `configs/v13.json`：除数据和步数外同 v12（ACT，chunk 50 / 执行 25，batch 128，lr 5e-5，AMP）；15000 步 ≈ 10 epoch，每 3000 步存一次。
+- 命令 `runs/v13_stack_merged.run.sh`（`train_trim.py --drop_first=auto --drop_last=20`）；日志 `runs/v13_stack_merged.train.log`。
+- 用时 77 分钟（14:48–16:05，约 3.3 步/秒）。loss：3.127（第 200 步）→ 0.189（1.8K）→ 0.150（3K）→ 0.075（12K）→ 0.066（15K）。
+- checkpoint：`runs/v13_stack_merged/checkpoints/last/pretrained_model`（每 3000 步一个，共 2.9G）。
+- 结论：保留，待真机测试。无离线检查、无视频。
+
+## 数据 pick_place_merged / 2026-11-17
+- 来源：`~/pick_place.zip`（微信传来，54 段、39443 帧，manual_outcomes 全部 success），解压到 `data/pick_place/`；我们的 `data/task1_home_clean/`（52 段、22451 帧，Home 起点单次抓放）。
+- 查重：pick_place 与 task1_home / b16 / cube_stack / cube_night / cube_placement_v2 / cube_placement_clean 的逐段 action 哈希无重合。两边视频都是 av1 / yuv420p / g=2。
+- 合并：`lerobot-edit-dataset --operation.type merge` → `data/pick_place_merged/`，106 段、61894 帧；0–53 段对应 pick_place，54–105 段对应 task1_home_clean。
+- 校验：抽 6 段首/中/末帧，state/action 完全相同，图像差为 0。
+
+## v14_stack_30k / 2026-11-17 完成
+- 改了什么：从 v13 第 15000 步续训到 30000 步（约 20 epoch），其余同 v13。v13 的 `015000` checkpoint 拷到 `runs/v14_stack_30k/checkpoints/` 后在新目录续训，v13 目录不动。
+- 配置 `configs/v14.json`；命令 `runs/v14_stack_30k.run.sh`（`--resume=true --steps=30000`）；日志 `runs/v14_stack_30k.train.log`。
+- 续训后第 15200 步 loss 0.065（接上 v13 末尾的 0.066），约 3.3 步/秒，原预计 05:50 结束；04:45 起和 v15 共用 GPU，降到约 1.7 步/秒，实际 06:46 结束，用时 2 小时 13 分。
+- loss：0.065（15.2K）→ 0.059（20K）→ 0.053（25K）→ 0.049（30K）。checkpoint：`runs/v14_stack_30k/checkpoints/last/pretrained_model`（每 3000 步一个）。
+- 结论：保留，待真机和 v13、v15 对比。无离线检查、无视频。
+
+## v15_stack_diffusion / 2026-11-17 完成
+- 改了什么：策略换成 LeRobot 自带的 Diffusion Policy（`policy.type=diffusion`），没有新写代码；`train_trim.py` 原样可用。数据同 v13/v14。
+- 配置 `configs/v15.json`：看 2 帧、预测 64 步（2.1 s）、执行 30 步（1 s）；图像缩到 240×320 再随机裁 216×288；DDIM，推理 10 步；batch 128，3 万步（约 20 epoch），lr 1e-4 余弦（默认），AMP，每 5000 步存一次。模型 263M 参数。
+- 注意：`train_trim.py` 的采样器不使用 Diffusion 的 `drop_n_last_frames`，每段末尾的样本会用最后一个动作补齐（未改）。
+- 命令 `runs/v15_stack_diffusion.run.sh`；日志 `runs/v15_stack_diffusion.train.log`。
+- 第 200 步 loss 0.446，约 2.8 步/秒（和 v14 共用 GPU），显存两版合计 51 GB，07:35 结束，用时 2 小时 49 分（v14 结束后升到约 4 步/秒）。
+- loss（噪声预测误差，不能和 ACT 比）：0.446（200）→ 0.014（5K）→ 0.010（15K）→ 0.006（30K）。checkpoint：`runs/v15_stack_diffusion/checkpoints/last/pretrained_model`（每 5000 步一个）。
+- 结论：保留，待真机和 v14 对比。无离线检查、无视频。
+
+## v16_pick_diffusion / 2026-11-17 完成
+- 改了什么：Diffusion Policy 换到单次抓放数据 `data/pick_place_merged`（106 段、61894 帧），其余同 v15；1 万步（约 20 epoch），每 2500 步存一次。
+- 配置 `configs/v16.json`；命令 `runs/v16_pick_diffusion.run.sh`；日志 `runs/v16_pick_diffusion.train.log`。
+- 用时 43 分钟（11:33–12:16）。loss（噪声预测误差）：0.468（200）→ 0.015（3K）→ 0.012（5K）→ 0.009（8K）→ 0.007（10K）。
+- checkpoint：`runs/v16_pick_diffusion/checkpoints/last/pretrained_model`（每 2500 步一个，共 12G）。
+- 结论：保留，待真机和 v17 对比。无离线检查、无视频。
+
+## v17_pick_act / 2026-11-17 完成
+- 改了什么：ACT 在单次抓放数据 `data/pick_place_merged` 上训 1 万步（约 20 epoch），其余同 v13（chunk 50 / 执行 25，batch 128，lr 5e-5，AMP），每 2500 步存一次。用来和 v16（Diffusion）对比。
+- 配置 `configs/v17.json`；命令 `runs/v17_pick_act.run.sh`；日志 `runs/v17_pick_act.train.log`；由 `runs/v17_pick_act.wait.sh` 等 v16 结束后自动启动。
+- 用时 53 分钟（12:16–13:09，约 3.3 步/秒）。loss：3.112（200）→ 0.106（3K）→ 0.076（5K）→ 0.059（8K）→ 0.052（10K）。
+- checkpoint：`runs/v17_pick_act/checkpoints/last/pretrained_model`（每 2500 步一个，共 2.4G）。
+- 结论：保留，待真机和 v16 对比。无离线检查、无视频。
+
+## v18_pickonly_diffusion / v19_pickonly_act / 2026-11-17 完成
+- 改了什么：只用对方的 `data/pick_place`（54 段、39443 帧，不合并我们的 task1_home_clean），Diffusion 和 ACT 各训一版；6000 步（约 20 epoch），每 2000 步存一次，其余分别同 v16 / v17。两版同时跑。
+- 配置 `configs/v18.json`（Diffusion）、`configs/v19.json`（ACT）；命令 `runs/v18_pickonly_diffusion.run.sh`、`runs/v19_pickonly_act.run.sh`；日志同名 `.train.log`。
+- v18 第 200 步 loss 0.473，约 2.6 步/秒；v19 约 1.8 步/秒。v18 14:51 结束（41 分钟），v19 15:00 结束（50 分钟）。
+- loss（2K → 4K → 6K）：v18 0.017 → 0.012 → 0.008（噪声预测误差）；v19 0.150 → 0.081 → 0.061。
+- checkpoint：`runs/v18_pickonly_diffusion/checkpoints/last/pretrained_model`（8.9G）、`runs/v19_pickonly_act/checkpoints/last/pretrained_model`（1.8G），每 2000 步一个。
+- 结论：两个都保留，待真机和 v16 / v17 对比。无离线检查、无视频。
+
+## v20_stackonly_diffusion / v21_stackonly_act / 2026-11-17 完成
+- 改了什么：只用对方的 `data/cube_stack`（52 段、120439 帧，不合并我们的 task1_home_b_clean），Diffusion 和 ACT 各训一版；20000 步（约 21 epoch），每 4000 步存一次，其余分别同 v18 / v19（即 v15 / v13 的设置）。两版同时跑。
+- 配置 `configs/v20.json`（Diffusion）、`configs/v21.json`（ACT）；命令 `runs/v20_stackonly_diffusion.run.sh`、`runs/v21_stackonly_act.run.sh`；日志同名 `.train.log`。
+- 开始时共用 GPU：v20 约 2.8 步/秒，v21 约 1.7 步/秒，显存合计 48 GB。
+- v20 21:09 结束（2 小时 7 分），v21 21:44 结束（2 小时 42 分，v20 结束后提速）。
+- loss（200 → 4K → 8K → 12K → 16K → 20K）：v20 0.454 → 0.014 → 0.012 → 0.010 → 0.007 → 0.006（噪声预测误差）；v21 3.122 → 0.101 → 0.075 → 0.062 → 0.055 → 0.050。
+- checkpoint：`runs/v20_stackonly_diffusion/checkpoints/last/pretrained_model`（15G）、`runs/v21_stackonly_act/checkpoints/last/pretrained_model`（2.9G），每 4000 步一个。最后一步已拉到 Mac `~/so101_models/`。
+- 结论：两个都保留，待真机和 v14 / v15（合并数据）对比。无离线检查、无视频。

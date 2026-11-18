@@ -1,0 +1,11 @@
+{
+  "dataset": {"repo_id": "local/cube_stack_merged", "root": "data/cube_stack_merged"},
+  "policy": {"type": "act", "push_to_hub": false, "chunk_size": 50, "n_action_steps": 25,
+             "use_amp": true, "optimizer_lr": 5e-5, "optimizer_lr_backbone": 5e-5},
+  "output_dir": "runs/v13_stack_merged",
+  "job_name": "v13_stack_merged",
+  "batch_size": 128,
+  "num_workers": 16,
+  "steps": 15000,
+  "save_freq": 3000
+}
