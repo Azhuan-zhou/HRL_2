@@ -1,6 +1,6 @@
 """Make a Dell-trained ACT model loadable by stock LeRobot on the Mac.
 Dell's LeRobot fork adds tactile options (off for these models); stock LeRobot rejects the keys.
-Strips every key containing 'tactile' from the json files rollout reads; originals kept as *.dell.json.
+Strips every key containing 'tactile' (and frame_stride=1 on Diffusion) from the json files rollout reads; originals kept as *.dell.json.
 Usage: python fix_dell_model.py ~/HRL_models/v3_c30x10 [more dirs...]
 """
 import json, shutil, sys
@@ -22,5 +22,8 @@ for d in map(Path, sys.argv[1:]):
             shutil.copy2(f, bak)
         data = json.loads(bak.read_text())
         assert not json.loads(bak.read_text()).get('use_tactile'), f'{f}: tactile is ON, stripping would break the model'
-        f.write_text(json.dumps(strip(data), indent=4))
+        data = strip(data)
+        # Diffusion on the fork also has frame_stride; 1 is stock behaviour, anything else would change the model.
+        assert data.pop('frame_stride', 1) == 1, f'{f}: frame_stride != 1, stripping would break the model'
+        f.write_text(json.dumps(data, indent=4))
         print('fixed', f)
