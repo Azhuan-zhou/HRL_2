@@ -1,87 +1,38 @@
-# SO-101 数据采集（HRL_2）
+# SO-101 data collection and evaluation
 
-使用已有 LeRobot calibration，通过 leader 遥操作 follower，保存标准 LeRobot 图像、关节状态、动作和任务信息。此包是官方 CLI 的配置封装，不实现新的电机控制协议。不自动上传数据，不执行电机配置或重新标定。
+LeRobot 0.6.2 wrapper for the SO-101 arm. `config.json` is the only place that stores the serial ports, calibration files, and wrist camera. The scripts collect teleoperated demonstrations, train ACT or diffusion policies, and run a checkpoint on the follower. Nothing is uploaded to the Hugging Face Hub.
 
-## 1. 放置文件并激活环境
-
-将 `collect.py`、`manual_record.py`、`config.json`、`README.md` 放在：
+Working directory:
 
 ```bash
-cd /Users/azhuan/Documents/JHU/course/HRL/HRL_2
+cd /Users/jiafeng/HRL_2
+conda activate lerobot
 ```
 
-激活你之前成功完成 calibration 的 Python/Conda 环境（使用你自己的环境名称）。优先保留该环境及其 LeRobot 版本，不要为了运行脚本盲目升级。
+Use this conda environment. The base conda Python hits an OpenMP error when it imports LeRobot. Check the install with:
 
 ```bash
 python -c "import importlib.metadata; print(importlib.metadata.version('lerobot'))"
-command -v python
-command -v lerobot-record
 lerobot-record --help
 ```
 
-若尚未安装，在独立的 Python 3.12 环境中按官方安装指南安装；当前官方安装方式示例：
+## Hardware
 
-```bash
-python -m pip install 'lerobot[core_scripts,feetech]'
-brew install ffmpeg
-```
-
-这里的安装命令跟随官方当前版本；本包没有锁定你的未提供的已有版本。若当前安装没有 `lerobot-record` 命令，不要直接开始录制，应先完成 LeRobot 安装。保留实际版本：
-
-```bash
-python -m pip freeze > environment-lock.txt
-```
-
-## 2. 确认标定文件
-
-已预填串口：
-
-| 机械臂 | 串口 |
+| Arm | Port |
 | --- | --- |
 | Leader | `/dev/tty.usbmodem5B421343381` |
 | Follower | `/dev/tty.usbmodem5B421342761` |
 
-脚本从当前 LeRobot 的 `HF_LEROBOT_CALIBRATION` 路径寻找对应 SO-101 标定文件；每类只有一个文件时自动选用。需要确认该文件确实对应当前实物。存在多个或文件保存在其他位置时，在 `config.json` 填写绝对路径，例如：
+Calibration files are the absolute paths in `config.json`. The script uses the filename (without `.json`) as the robot or teleop id and passes that directory through. It does not copy or rewrite calibration files.
 
-```json
-"leader_calibration_file": "/Users/azhuan/.cache/huggingface/lerobot/calibration/teleoperators/so101_leader/my_awesome_leader_arm.json",
-"follower_calibration_file": "/Users/azhuan/.cache/huggingface/lerobot/calibration/robots/so101_follower/my_awesome_follower_arm.json"
-```
-
-这些是路径示例，必须换成实际文件。可用以下命令查看当前环境默认目录：
-
-```bash
-python -c "from lerobot.utils.constants import HF_LEROBOT_CALIBRATION; print(HF_LEROBOT_CALIBRATION)"
-```
-
-脚本以标定文件的文件名（去除 `.json`）作为 robot/teleop ID，并显式传递标定目录。不会复制或修改标定文件。如果 LeRobot 仍提示重新校准，先退出并核对文件与机械臂，不要随意覆盖标定。
-
-## 3. 确认相机（必须完成）
-
-默认配置仅包含一台占位相机 `wrist: 0`，编号 0 可能是 Mac 内置相机，不能假定是腕部相机。
+The wrist camera is OpenCV index 1, 640×480, 30 fps. Confirm it before recording:
 
 ```bash
 lerobot-find-cameras opencv
-```
-
-根据检测结果修改 `config.json` 的 `index_or_path`。如果有外部相机，可将整个 cameras 字段改成下面形式（编号仍需实测）：
-
-```json
-"cameras": {
-  "wrist": {"type": "opencv", "index_or_path": 1, "width": 640, "height": 480, "fps": 30},
-  "front": {"type": "opencv", "index_or_path": 2, "width": 640, "height": 480, "fps": 30}
-}
-```
-
-```bash
 python collect.py preview
 ```
 
-逐个窗口检查：wrist 确实是腕部相机；front 是外部相机；画面清晰且能看到操作区域。按 `q` 关闭预览后再采集，避免占用摄像头。预览不连接机械臂。
-
-macOS：系统设置 → 隐私与安全性 → 相机，允许运行 Python 的 Terminal/iTerm/IDE 访问。录制快捷键不生效时，也检查辅助功能及输入监控权限，重启终端。相机名称、安装位置、分辨率和 fps 在同一数据集内保持一致。
-
-## 4. 检查配置并试遥操作
+`preview` opens the camera and does not connect the arms. On macOS, allow the terminal or Cursor under System Settings → Privacy & Security → Camera. Press `q` to close the preview before recording, so the camera is free.
 
 ```bash
 python collect.py check
@@ -89,178 +40,110 @@ python collect.py teleop --dry-run
 python collect.py teleop
 ```
 
-`check` 仅检查软件、串口文件和标定文件，不证明设备已通信成功。`teleop` 会实际驱动机械臂。开始前让 leader/follower 处于近似一致的姿态，清空碰撞范围；先缓慢移动检查关节映射。结束遥操作用 Ctrl+C。支持好机械臂，断开连接后可能解除力矩。
+`check` only looks at the software, the serial-port device files, and the calibration files. `teleop` moves the arms. Start with the leader and follower in similar poses and the workspace clear. End teleop with Ctrl+C. Support the arm: disconnecting can release torque.
 
-## 5. 先采集 2 条测试数据
+If a port name changes after replugging, update `config.json`. A resume of an existing dataset also requires the saved camera settings to match the current file.
 
-```bash
-python collect.py record --name cube_test --episodes 2 --dry-run
-python collect.py record --name cube_test --episodes 2
-python collect.py inspect --name cube_test
-```
+## Record
 
-默认使用手动录制（30 FPS），需要在交互式终端中运行，并将键盘焦点留在该终端：
-
-1. 等待时可遥操作复位，不记录数据；按 **Enter** 开始一条。
-2. 再按 **Enter** 结束本条，没有时长上限（超过 50 秒也仍需 Enter）。
-3. 输入 **s + Enter** 标记成功并保存，或 **f + Enter** 标记失败并丢弃。失败片段通过 LeRobot 的清理接口丢弃，不写入数据集或结果标签，不占用 episode 编号，也不计入目标条数。选择结果及保存期间暂停遥操作跟随。
-4. 保存完成后回到等待，按 Enter 开始下一条；等待期间 **q + Enter** 退出。
-
-`--episodes 50` 是本次目标提示，不是上限；达到 50 条后仍可继续 Enter 录制。录制期间也可输入 q + Enter，选择当前条的成功/失败后，成功则保存、失败则丢弃，然后退出。正常退出请使用 q，等待编码及保存完成。Ctrl+C / 进程中断不能保证当前未完成片段保存。
-
-手动模式忽略 `episode_time_s` 和 `reset_time_s` 的计时。恢复原始自动计时模式可加 `--timed`，此时条数是硬上限，方向键及 Esc 使用 LeRobot 原生行为。
-
-每条结果额外写入 `data/<name>/meta/manual_outcomes.jsonl`，以 `episode_index` 对应 LeRobot 数据。每次保存先写 `status: "pending"`，保存成功再写 `status: "saved"`；读取时只选择 saved 行。`success` 为布尔值，新录制的 `outcome` 为 success。仅有 pending 表示保存过程被中断，需核对数据后再使用。标签是额外元数据，不会自动成为 LeRobot 训练特征；现在只保存成功片段。已有数据和标签不修改；旧版本已保存的 failure 仍然存在，训练旧数据时需要据此筛选。
-
-手动适配器已核对本机 LeRobot 源码的录制循环及 has_pending_frames 接口，启动前检查基础函数签名；自动测试不代替实机验证。先做少量试录。
-
-`inspect` 显示元数据中的 episode 数、帧数、特征等；它不是完整数据质量检查。请实际播放 `data/cube_test/videos/` 下的视频，并检查数据中有 `observation.state`、`action` 与预期的 `observation.images.*`。不同 LeRobot 版本可能将多条 episode 合并在一个视频/Parquet 文件中。
-
-## 6. 正式录制和追加
-
-测试确认正常后，新建正式数据集：
+Manual recording is the default. Run it in a terminal that has keyboard focus.
 
 ```bash
-python collect.py record --name cube_placement --episodes 50
+python collect.py record --name task1_home --episodes 2 --dry-run
+python collect.py record --name task1_home --episodes 2
+python collect.py inspect --name task1_home
 ```
 
-之后追加，设置本次目标为 20 条（手动模式可继续超过目标）：
+1. While waiting, teleoperate the reset. That motion is not recorded. Press **Enter** to start an episode.
+2. Press **Enter** again to end it. There is no time limit.
+3. Type **s** then Enter to save the episode, or **f** then Enter to discard it. A discarded episode is not written and does not take an index.
+4. Press **q** then Enter while waiting to stop.
+
+`--episodes` is a target, not a hard stop, so recording can continue past it. Ctrl+C does not reliably save the episode in progress. `--timed` switches back to LeRobot's timed episodes (`episode_time_s` 40, `reset_time_s` 20 in `config.json`).
+
+An existing directory is not overwritten. Append only when `meta/info.json` is present:
 
 ```bash
-python collect.py record --name cube_placement --episodes 20 --resume
-python collect.py inspect --name cube_placement
+python collect.py record --name task1_home --episodes 20 --resume
 ```
 
-同名目录已存在时，脚本会拒绝非 resume 录制，不会自动覆盖或删除。只有完整保存且存在 `meta/info.json` 的数据集才能追加。损坏的未完成会话不能保证能恢复，不要通过删除元数据强行续录。
+`inspect` prints episode count, frame count, and features. Also play the files under `data/<name>/videos/`.
 
-初始数据建议固定托盘、有限范围改变方块位置，保持动作一致；每次记录完整的抓取放置过程。50 条是实践起点，不是保证成功的数量。先检查少量数据的质量，再扩大规模。
+Datasets kept for the assignment:
 
-## 7. 输出位置
+| Directory | Episodes | Task |
+| --- | --- | --- |
+| `data/task1_home` | 54 | Pick up the cube and place it in the tray |
+| `data/cube_stack_80_10_13` | 103 | Stack blocks |
+
+Both are LeRobot dataset v3.0, 30 fps, wrist image plus six joint positions. The action is the same six values: five joint positions in degrees and a gripper command from 0 to 100, larger meaning more open.
+
+## Train
+
+`train_trim.py` calls `lerobot-train` and ignores idle frames at the start of each episode plus a fixed number of frames at the end. The dataset files are not modified. Normalization statistics still include the dropped frames. `output_dir` must not already exist.
+
+```bash
+python train_trim.py --drop_first=auto --drop_last=20 --config_path=configs/bench_v30m.json
+```
+
+`configs/bench_v30m.json` is a 30-step diffusion smoke test on `data/cube_stack_80_10_13`. The stacking checkpoints in `models/` were trained on that dataset: `v29_stack80_10_13_imnet` is 30,000 steps, and `v29_stack80_10_13_imnet_020000` is the 20,000-step checkpoint. Diffusion, ImageNet ResNet-18, observation window 2, prediction horizon 64, execution horizon 30. `configs/v18.json` through `configs/v21.json` point at datasets that are no longer in `data/`.
+
+A checkpoint saved on the training machine can contain extra tactile fields and `frame_stride`. After `model.safetensors` is fully copied (about 1 GB), strip those keys so LeRobot 0.6.2 can load it:
+
+```bash
+python fix_dell_model.py models/<model>
+```
+
+Original files are kept as `*.dell.json`. Weights are not changed. `use_tactile` must be false and `frame_stride` must be 1.
+
+## Evaluate
+
+`eval.py` is `lerobot-rollout` with two additions. After connect it glides for 3 seconds to a named start pose, shows the wrist view, and waits for Enter in the terminal. The duration timer starts after Enter. A failed connect is retried.
+
+```bash
+python eval.py --policy.path=models/v29_stack80_10_13_imnet \
+  --start=stack --duration=240 --policy.num_inference_steps=5 \
+  --robot.max_relative_target=null
+```
+
+The 20,000-step checkpoint is `models/v29_stack80_10_13_imnet_020000`. Same flags.
+
+- `--start=stack` is the stacking start pose. `--start=home` reads `configs/home_pose.json`.
+- `--policy.num_inference_steps=5` shortens the diffusion replan. The saved checkpoint uses 10. The weights do not change.
+- `--robot.max_relative_target=null` turns off the 5-degree-per-tick limit in `configs/eval_rollout.json`.
+- `--grip_offset=8` commands the gripper further closed while the policy command is below 20, and removes that offset once the command opens by 3. Default is 0, so the learned command is what the arm receives.
+
+Ctrl+C stops early. The arm returns to the start pose at the end of a normal run.
+
+To keep a video of every attempt, add a rollout dataset whose repo id starts with `rollout_`:
+
+```bash
+python eval.py --policy.path=models/v29_stack80_10_13_imnet \
+  --start=stack --duration=240 --policy.num_inference_steps=5 \
+  --robot.max_relative_target=null \
+  --dataset.repo_id=local/rollout_stack --dataset.root=data/rollout_stack \
+  --dataset.num_episodes=25 --dataset.single_task="Stack the blocks."
+```
+
+## Layout
 
 ```text
 HRL_2/
-  collect.py
-  config.json
-  README.md
-  data/
-    cube_test/
-    cube_placement/
-      meta/
-      data/
-      videos/
-  logs/
-    cube_placement_config.json
-    <timestamp>_command.json
+  collect.py          record and teleop
+  eval.py             rollout from a start pose
+  train_trim.py       lerobot-train with trimmed episodes
+  fix_dell_model.py   strip extra keys from a copied checkpoint
+  pick_home.py        save configs/home_pose.json
+  manual_record.py    Enter / s / f recording used by collect.py
+  config.json         ports, calibration, wrist camera
+  configs/            train and rollout settings
+  data/               task1_home, cube_stack_80_10_13
+  models/             v29 20k and 30k stacking checkpoints
 ```
 
-默认 `repo_id=local/<name>`，`push_to_hub=false`，不需要 Hugging Face 登录。对支持自动时间戳的新版本，脚本使用 `no_stamp=true` 保持名称稳定。日志包含实际命令、版本及录制配置；终端输出由 LeRobot 直接显示，不另存文本日志，以保持交互式键盘控制。后续训练时保留整个数据目录。
+`data/`, `models/`, `runs/`, and `logs/` are gitignored. `logs/` is rewritten on each eval launch.
 
-## 常见问题
-
-- 串口不存在：重新插拔后编号可能改变，更新 config.json。
-- 标定文件不唯一：显式设置两个 `*_calibration_file`。
-- 相机黑屏/打不开：检查编号、权限、USB 带宽，并关闭其他使用相机的程序。
-- 视频编码或依赖报错：在当前环境运行 `lerobot-record --help`，检查 FFmpeg/视频编码依赖；先完成 2 条试录。
-- 循环达不到 30 FPS：检查终端耗时提示；减少相机数量或分辨率后用新数据集重新测试，不能只按声明的 fps 假定采样真实达标。
-- 追加配置不一致：恢复首次采集配置，或使用新名字建立新数据集；不要直接混合不同相机布局。
-- 没有实机测试声明：此包在独立环境检查 Python 语法和命令构造/保护逻辑；未连接你的 Mac、相机或机械臂。必须完成以上试录验证。
-
-## 训练 ACT
-
-在 `HRL_2/` 目录下运行，环境里要有 LeRobot 和 GPU（实验室 Linux 机器：`source ~/Newton_shear_force/.venv-lerobot/bin/activate`）。在别的机器上训练时，把整个 `data/` 拷过去。`configs/v1.json`、`configs/v2.json` 用的是 `data/cube_placement_v2_clean`（已删失败片段的数据），换数据时改 `dataset.repo_id` 和 `dataset.root`。
-
-旧版本采集的数据（比如 `cube_placement_v2`）里还有失败片段，训练前先选出成功的；新采集的数据只保存成功片段，可以跳过这一步：
-
-```bash
-EPS=$(python -c "import json;print(sorted({r['episode_index'] for r in map(json.loads,open('data/cube_placement/meta/manual_outcomes.jsonl')) if r['status']=='saved' and r['success']}))" | tr -d ' ')
-echo "$EPS"
-```
-
-只用成功片段训练，不丢帧：
-
-```bash
-lerobot-train --config_path=configs/v1.json --dataset.episodes="$EPS"
-```
-
-同时丢掉每段开头和结尾的帧（30 fps 下 30 帧 = 1 秒，数字按数据调）：
-
-```bash
-python train_trim.py --drop_first=5 --drop_last=5 --config_path=configs/v1.json \
-  --dataset.episodes="$EPS" --output_dir=runs/v1_trim --job_name=v1_trim
-```
-
-丢掉的帧既不做训练起点，也不做 action 目标，数据集文件不会改动。`--output_dir` 必须还不存在，已存在时 LeRobot 会报错，不会覆盖。
-
-## 真机推理
-
-### 1. 下载训练好的模型（在 Mac 上）
-
-两个模型打包在 Dell 的 `~/models.tar`（394 MB）。每次复制一行，不要手打：
-
-```bash
-mkdir -p ~/HRL_models && cd ~/HRL_models
-```
-```bash
-scp jiafeng@100.114.103.9:models.tar .
-```
-```bash
-tar xf models.tar && ls
-```
-
-最后应该显示 `models.tar  v1_act  v2_trim20`，两个目录里各有一个 `model.safetensors`（197 MB）。
-
-| 模型 | 训练 |
-| --- | --- |
-| `v1_act` | `cube_placement_v2_clean`（34 段），不丢帧，10 万步 |
-| `v2_trim20` | 同样的数据，每段首尾各丢 20 帧，10 万步 |
-
-### 2. 运行前检查
-
-- `configs/eval_rollout.json` 的串口和标定目录是这台 Mac 的（`/Users/jiafeng`）。机械臂插在别的电脑上时，先用 `lerobot-find-port` 查串口，再改 `port` 和 `calibration_dir`。旧的 `configs/v1_eval.json` 是给旧版 `lerobot-record` 用的，标定目录还是 Azhuan 的 Mac。
-- 相机 `wrist: 0` 必须是腕部相机，并且和采集数据时用的是同一个，可以用 `python collect.py preview` 确认。
-- 没有 dry-run。第一次运行时手放在电源上，动作不对就立刻断电。
-
-### 3. 运行
-
-新版 LeRobot（Mac 上 `conda activate lerobot`，即 `~/lerobot` 源码）里 `lerobot-record` 不再接受 `--policy`，改用 `lerobot-rollout` + `configs/eval_rollout.json`（只跑不录，30 秒，mps）。
-
-Dell 上训练的 LeRobot 是带触觉的改版，模型的 `config.json`、`policy_preprocessor.json`、`policy_postprocessor.json` 里多了 tactile 字段（功能是关的），新版不认。从 Dell 拉下新模型后先跑一次（原文件留作 `*.dell.json`，权重不动）：
-
-```bash
-python fix_dell_model.py ~/HRL_models/<模型名>
-```
-
-`~/HRL_models` 里现有四个模型已处理。
-
-在 `HRL_2/` 目录下运行：
-
-```bash
-M=$HOME/HRL_models
-python eval.py --policy.path=$M/v5_auto_c100x30
-```
-
-`eval.py` 就是 `lerobot-rollout --config_path=configs/eval_rollout.json`，只多两件事：连上后先用 3 秒移到训练起始姿态（每次测试起点相同），连接偶发 "Incorrect status packet" 时自动重试。方块每次放在同一位置。
-
-把 `v5_auto_c100x30` 换成 `v1_act`、`v2_trim20`、`v3_c30x10`、`v4_c100x30` 跑其它模型。机械臂会自己动 30 秒，Ctrl+C 提前停；结束后回到起始姿态。时长改 `--duration=60`。
-
-## 人在回路采集（HIL / DAgger）
-
-按 [LeRobot HIL 文档](https://huggingface.co/docs/lerobot/v0.6.1/en/hil_data_collection)：策略在真机上跑，快失败时人用 leader 臂接管纠正，纠正的片段录成新数据，之后和原数据合并再微调。需要 Mac 上 `conda activate lerobot`（`~/lerobot` 源码，0.6.x），follower 和 leader 都插上。
-
-```bash
-python hil.py --policy.path=<模型目录> --start=home --dataset.repo_id=local/hil_v11 --dataset.root=data/hil_v11
-```
-
-- 先和 eval.py 一样滑到训练起始姿态，看相机窗口按 Enter 开始。
-- **空格**：暂停 / 继续策略。暂停时 leader 会自动转到 follower 当前姿态，方便接手。
-- **Tab**（暂停状态下）：开始 / 结束一次纠正，期间用 leader 遥操作，结束后这段存成一个 episode。
-- **ESC**：结束。默认录 20 次纠正（`--strategy.num_episodes=30` 可改）。
-- 只录纠正片段（`record_autonomous=false`，库的默认），策略自己跑的部分不录。想连自主部分一起录加 `--strategy.record_autonomous=true`，帧上带 `intervention` 标记。
-- 每个模型/每轮用新的 `--dataset.root`，目录已存在会报错。
-- macOS 要给终端开 **辅助功能** 权限（系统设置 → 隐私与安全性 → 辅助功能），否则按键监听退回到终端输入。
-- 配置在 `configs/hil_dagger.json`（串口、标定目录同 `eval_rollout.json`）。
-
-## 官方参考
+## References
 
 - https://huggingface.co/docs/lerobot/so101
 - https://huggingface.co/docs/lerobot/il_robots

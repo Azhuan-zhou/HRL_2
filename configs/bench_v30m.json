@@ -1,0 +1,31 @@
+{
+  "dataset": {
+    "repo_id": "local/cube_stack_80_10_13",
+    "root": "data/cube_stack_80_10_13"
+  },
+  "policy": {
+    "type": "diffusion",
+    "push_to_hub": false,
+    "device": "mps",
+    "n_obs_steps": 2,
+    "horizon": 64,
+    "n_action_steps": 30,
+    "resize_shape": [
+      240,
+      320
+    ],
+    "crop_ratio": 0.9,
+    "noise_scheduler_type": "DDIM",
+    "num_inference_steps": 10,
+    "pretrained_backbone_weights": "ResNet18_Weights.IMAGENET1K_V1",
+    "use_group_norm": false,
+    "use_amp": false
+  },
+  "output_dir": "runs_mac/bench_v30m",
+  "job_name": "bench_v30m",
+  "batch_size": 128,
+  "num_workers": 10,
+  "steps": 30,
+  "save_freq": 100000,
+  "log_freq": 10
+}

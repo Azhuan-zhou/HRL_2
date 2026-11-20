@@ -11,7 +11,7 @@ import time
 
 HOME_SECONDS = 3.0  # 回原位用时；太快会冲击，太慢浪费时间
 # 固定起点 Home：方块和托盘都在腕部相机画面里（用 pick_home.py 选定，见 configs/home_pose_view.jpg）。
-HOME = {'shoulder_pan': -9.7, 'shoulder_lift': -70.0, 'elbow_flex': 46.1, 'wrist_flex': 74.8, 'wrist_roll': -99.6, 'gripper': 65.4}  # configs/home_pose.json (picked with pick_home.py)
+HOME = json.loads((Path(__file__).resolve().parent / 'configs' / 'home_pose.json').read_text())
 
 
 class ManualStop(Exception):
